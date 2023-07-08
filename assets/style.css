@@ -1,0 +1,22 @@
+@font-face {
+    font-family: 'UDFont';
+    src: url('https: //fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap');
+}
+
+.dash-header {
+    background: linear-gradient(to right, #824880, hwb(6 85% 2%));
+}
+
+body {
+    color: #43676b;
+    font-family:
+        "Helvetica Neue",
+        "Hiragino Sans",
+        "Hiragino Kaku Gothic ProN",
+        'UDFont',
+        "Helvetica",
+        "Arial",
+        "Yu Gothic",
+        sans-serif,
+        "Meiryo";
+}
