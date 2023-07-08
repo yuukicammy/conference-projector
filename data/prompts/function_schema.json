@@ -1,0 +1,71 @@
+{
+    "name": "summary",
+    "description": "Formatted summary of the paper.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "description_en": {
+                "type": "string",
+                "description": "Brief description of the paper"
+            },
+            "advantages_en": {
+                "type": "string",
+                "description": "Advantages over previous studies"
+            },
+            "essence_en": {
+                "type": "string",
+                "description": "The key essence of the proposed approach"
+            },
+            "results_en": {
+                "type": "string",
+                "description": "Experimental results"
+            },
+            "category_en": {
+                "type": "string",
+                "description": "Category"
+            },
+            "application_en": {
+                "type": "string",
+                "description": "Application"
+            },
+            "description_ja": {
+                "type": "string",
+                "description": "論文の概要"
+            },
+            "advantages_ja": {
+                "type": "string",
+                "description": "先行研究より優れている点"
+            },
+            "essence_ja": {
+                "type": "string",
+                "description": "提案手法のポイント"
+            },
+            "results_ja": {
+                "type": "string",
+                "description": "実験結果"
+            },
+            "category_ja": {
+                "type": "string",
+                "description": "カテゴリ"
+            },
+            "application_ja": {
+                "type": "string",
+                "description": "アプリケーション"
+            }
+        },
+        "required": [
+            "description_en",
+            "advantages_en",
+            "essence_en",
+            "results_en",
+            "category_en",
+            "application_en",
+            "description_ja",
+            "advantages_ja",
+            "essence_ja",
+            "results_ja",
+            "category_ja",
+            "application_ja"
+        ]
+    }
+}

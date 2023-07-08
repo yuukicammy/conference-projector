@@ -1,0 +1,25 @@
+以下の論文について、次の項目を英語と日本語で出力してください。
+簡潔に記述してください。
+
+[English]
+(1) Brief description of the paper.
+(2) Advantages over previous studies.
+(3) The key essence of the proposed approach.
+(4) Experimental results.
+(5) Category in Computer Vision of the paper　(ex. 3D Human Pose Estimation, 3D Object Tracking, Object Detection, Image Exposure Correction)
+(6) Application of the proposed technology
+
+[日本語]
+(7) 論文の簡潔な説明
+(8) 先行研究より優れている点
+(9) 提案手法のポイント
+(10) 実験結果
+(11) コンピュータビジョンにおける論文のカテゴリ (例: 3D人物姿勢推定、3D物体追跡、物体検出, 露出補正)
+(12) この技術のアプリケーション 
+```
+タイトル:{}
+アブストラクト:{}
+```
+
+英語と日本語で出力してください。
+URLの終わりには必ずスペースを入れてください。
