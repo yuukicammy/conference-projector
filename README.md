@@ -1,6 +1,6 @@
 # Conference Projector
 
-<a herf="https://yuukicammy--paper-viz-webapp-wrapper.modal.run/">
+<a herf="https://modal.com/apps/yuukicammy/conference-projector/en">
 <img src="https://github.com/yuukicammy/conference-projector/raw/main/data/readme/first_screen_smpl.png" height=150 alt="Top Screen" title="Top Screen"><br>
 <b>Conference Projector</b></a>
 
@@ -77,6 +77,7 @@ Thank you to arXiv for use of its open access interoperability.
 
 # ToDo
 - [ ] Delete legend.
+- [ ] English/Japanese settings.
 - [ ] Modify the prompt.
 - [ ] CI 
 - [ ] CD
