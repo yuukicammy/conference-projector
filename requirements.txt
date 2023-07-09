@@ -1,0 +1,10 @@
+###### Requirements for the local emvironmet ######
+modal
+numpy
+Pillow
+dacite
+toml
+dash
+dash-bootstrap-components
+pandas
+plotly
