@@ -23,7 +23,8 @@
 
 Currently only CVPR2023 is supported.
 
-{% include youtube.html id="k__408VdaDk" %}
+<a href="https://www.youtube.com/watch?v=k__408VdaDk">
+<img src="https://github.com/yuukicammy/conference-projector/raw/main/data/readme/youtube_screen.png" height=150 alt="YouTube Screen" title="YouTube Screen"></a>
 
 You can see a live demo of the website at the following link: [Conference Projector](https://yuukicammy--paper-viz-webapp-wrapper.modal.run)
 
