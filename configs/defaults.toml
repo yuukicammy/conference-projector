@@ -87,6 +87,7 @@ text_selection_description = "Your Selection"
 text_top_description = "Clicking on a node will display information about that paper and papers close to it."
 
 title = "Conference Projector: CVPR 2023"
+title_url = "https://yuukicammy--paper-viz-webapp-wrapper.modal.run" # "https://yuukicammy--conference-projector-wrapper.modal.run"
 
 label_dimension = "Dimension"
 label_distance = "Distance"
@@ -100,6 +101,7 @@ width_figure = "40%"
 web_description = "See the Big Picture and Find Papers Accepted in the International Conference powered by OpenAI"
 web_icon = "https://drive.google.com/uc?export=download&id=1WYCjr3Rxi9Q-2INWPchdMmumsEdtCvHg"
 web_title = "Conference Projector"
+
 
 [[webapp.embedding_options]]
 label = "Category"
