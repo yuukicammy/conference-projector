@@ -144,6 +144,7 @@ class WebAppConfig:
     web_title:str=""
     web_description:str=""
     web_icon:str = ""
+    title_url:str=""
 
 @dataclass
 class DBConfig:
