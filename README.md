@@ -5,7 +5,6 @@
 <b>Conference Projector</b></a>
 
 
-
 ## What is Conference Projector?
 
 * Conference Projector is a web application that visualizes the all papers in the International Conference.
@@ -75,4 +74,11 @@ See [the official website](https://openaccess.thecvf.com/menu).
 #### arXiv
 Thank you to arXiv for use of its open access interoperability.
 
-#### 
+
+# ToDo
+- [ ] Delete legend.
+- [ ] Modify the prompt.
+- [ ] CI 
+- [ ] CD
+- [ ] Improve representative image extraction algorithm.
+- [ ] Marker changes for important papers.
