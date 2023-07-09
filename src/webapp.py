@@ -151,14 +151,14 @@ class DashApp:
                 Input("dimensions", "value"),
                 Input("viewall-nclicks", "n_clicks"),
             ],
-            [State("url", "search"), State("shared-data", "data")],
+            [State("url", "search"), State("shared-data", "data"), State("url", "pathname")],
         )(self.update)
         
         # Updated paper description 
         self.app.callback(
             [Output("recommendation", "children"), Output("shared-data", "data")],
             [Input("details-option", "value")],
-            [State("url", "search")],
+            [State("url", "search"), State("url", "pathname")],
         )(self.update_details)
 
     @modal.method()
@@ -252,7 +252,10 @@ class DashApp:
         view_all_nclicks: int = 0,
         search: str = None,
         shared_data: Dict[str, Any] = {},
+        pathname: str = None,
     ):
+        en_mode = True if pathname.startswith("/en") else False
+
         if 0 < view_all_nclicks:
             # Show all nodes
             return (
@@ -273,7 +276,7 @@ class DashApp:
         if isinstance(shared_data, dict) and "options" in shared_data.keys():
             options = shared_data["options"]
         else:
-            options = self.container_data.default_options
+            options = self.container_data.default_options_en if en_mode else self.container_data.default_options
 
         if clicked_data is not None:
             index = None
@@ -310,8 +313,8 @@ class DashApp:
                     {"width": self.config.webapp.width_figure},
                     dbc.Row(
                         [
-                            self.layout.selected_paper_block(df=self.app_data.df, index=index),
-                            self.layout.recommendation_block(options=options, all_options=self.container_data.info_opts),
+                            self.layout.selected_paper_block(df=self.app_data.df, index=index, en_mode=en_mode),
+                            self.layout.recommendation_block(options=options, all_options=self.container_data.info_opts_en if en_mode else self.container_data.info_opts),
                         ]
                     ),
                     {"width": self.config.webapp.width_details},
@@ -358,8 +361,8 @@ class DashApp:
                     {"width": self.config.webapp.width_figure},
                     dbc.Row(
                         [
-                            self.layout.selected_paper_block(df=self.app_data.df, index=params["node"]),
-                            self.layout.recommendation_block(options=options, all_options=self.container_data.info_opts),
+                            self.layout.selected_paper_block(df=self.app_data.df, index=params["node"], en_mode=en_mode),
+                            self.layout.recommendation_block(options=options, all_options=self.container_data.info_opts_en if en_mode else self.container_data.info_opts),
                         ]
                     ),
                     {"width": self.config.webapp.width_details},
@@ -378,17 +381,18 @@ class DashApp:
         )
 
     @modal.method()
-    def update_details(self, options: List[str] = None, search: str = None):
+    def update_details(self, options: List[str] = None, search: str = None, pathname:str = None):
         print("update_details")
         try:
             params = self.parse_search(search=search)
+            en_mode = True if pathname.startswith("/en") else False
             index = params["node"]
             key = params["key"]
             method = params["method"]
             dim = params["dim"]
             feature_name = f"{key}_{method}_{str(dim)}"
             _, indices = self.k_nearest(index=index, feature_name=feature_name)
-            return [self.layout.description_block(df=self.app_data.df, indices=indices[1:], options=options, start_rank=1, im_width="50%")], {
+            return [self.layout.description_block(df=self.app_data.df, indices=indices[1:], options=options, start_rank=1, im_width="50%", en_mode=en_mode)], {
                 "options": options 
             }
         except Exception as e:
@@ -401,8 +405,8 @@ class DashApp:
         SHARED_ROOT: modal.NetworkFileSystem.persisted(ProjectConfig._shared_vol)
     },
     # cpu=1,
-    # memory=10240,
-    #    keep_warm=5,
+    memory=5120,
+    keep_warm=5,
 )
 @modal.wsgi_app()
 def wrapper():

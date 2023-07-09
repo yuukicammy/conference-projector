@@ -40,6 +40,14 @@ class ContainerData:
             del schema
         self.info_opt_vals = [d["value"] for d in self.info_opts]
 
+        # Remove Japanese options for the English page.
+        self.default_options_en = [
+            "advantages_en",
+            "essence_en",
+        ]
+        self.info_opts_en = list(filter(lambda d: d.get('value').endswith("ja") == False, self.info_opts))
+        self.info_opts_vals_en = list(filter(lambda d: d.endswith("ja") == False, self.info_opt_vals))
+
         print("Loading reduced_features")
         with open(self.config.files.reduced_feature_file, "rb") as f:
             self.reduced_features = pickle.load(f)
