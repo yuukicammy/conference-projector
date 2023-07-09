@@ -76,10 +76,15 @@ Thank you to arXiv for use of its open access interoperability.
 
 
 # ToDo
-- [ ] Delete legend.
-- [ ] English/Japanese settings.
-- [ ] Modify the prompt.
+- [ ] Type hints with "" 
+- [ ] Delete legend
+- [ ] English/Japanese settings
+- [ ] Modify the prompt
 - [ ] CI 
+   - [ ] unittest
+   - [ ] mypy
+   - [ ] format 
 - [ ] CD
-- [ ] Improve representative image extraction algorithm.
-- [ ] Marker changes for important papers.
+- [ ] Improve representative image extraction algorithm
+- [ ] Mobile adaptation
+- [ ] Marker changes for important papers
