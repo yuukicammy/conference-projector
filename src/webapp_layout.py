@@ -392,7 +392,7 @@ class Layout:
             dbc.NavItem(
                 dbc.NavLink(
                     "GitHub",
-                    href="https://github.com/yuukicammy/papers-visualization",
+                    href="https://github.com/yuukicammy/conference-projector",
                     style={
                         "fontSize": self.config.webapp.size_code,
                         "color": "#6c757d",

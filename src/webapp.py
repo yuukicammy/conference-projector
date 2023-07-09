@@ -77,9 +77,6 @@ if stub.is_inside():
     network_file_systems={
         SHARED_ROOT: modal.NetworkFileSystem.persisted(ProjectConfig._shared_vol)
     },
-    timeout=3600,
-    cpu=8,
-    memory=10240,
 )
 class DashApp: 
     def __init__(self):
@@ -391,6 +388,9 @@ class DashApp:
         
 
 @stub.function(
+        network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.persisted(ProjectConfig._shared_vol)
+    },
     # cpu=1,
     # memory=10240,
     #    keep_warm=5,
