@@ -13,6 +13,8 @@ from .webapp_data import ContainerData, WebappData
 SHARED_ROOT = "/root/.cache"
 CONFIG_FILE = "configs/defaults.toml"
 
+PROD_STUB_NAME = "conference-projector"
+
 modal_image = (
     modal.Image.debian_slim(force_build=False)
     .apt_install("git")
@@ -38,13 +40,17 @@ modal_image = (
         mounts=[
             modal.Mount.from_local_dir(
                 Path(__file__).parent.parent / "configs", remote_path="/root/configs"
+            ),
+            modal.Mount.from_local_dir(
+                Path(__file__).parent.parent / "data/prompts", remote_path="/root/data/prompts"
             )
         ],
     )
 )
 
 stub = modal.Stub(
-    ProjectConfig._stab_webapp,
+    # ProjectConfig._stab_webapp,
+    PROD_STUB_NAME,
     image=modal_image,
     mounts=[
         modal.Mount.from_local_dir(
@@ -53,6 +59,9 @@ stub = modal.Stub(
         modal.Mount.from_local_dir(
             Path(__file__).parent.parent / "assets", remote_path="/root/src/assets"
         ),
+        modal.Mount.from_local_dir(
+                Path(__file__).parent.parent / "data/prompts", remote_path="/root/data/prompts"
+        )
     ],
 )
 
