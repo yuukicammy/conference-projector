@@ -22,7 +22,7 @@ class ContainerData:
             {"label": "Image", "value": "image"},
         ]
         self.info_order = ["abstract"]
-        with open("configs/function_schema.json", "r", encoding="utf-8") as f:
+        with open(config.summary.function_schema_file, "r", encoding="utf-8") as f:
             schema = json.load(f)
             self.properties = schema["parameters"]["properties"]
             for key in self.properties.keys(): # this keys are not optional.
