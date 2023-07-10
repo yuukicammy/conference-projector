@@ -2,16 +2,31 @@ from pathlib import Path
 from typing import Dict, Any
 
 import modal
-from PIL import Image
 
-from .config import ProjectConfig, Config, DBConfig
+from .config import ProjectConfig, Config
 
-stub = modal.Stub(ProjectConfig._stab_paper_image)
+stub = modal.Stub(
+    ProjectConfig._stab_paper_image,
+    image=modal.Image.debian_slim()
+    .apt_install("poppler-utils")
+    .pip_install(
+        "pymupdf", "Pillow", "requests", "pdf2image", "arxiv", "mypy", "toml", "dacite"
+    ),
+)
 SHARED_ROOT = "/root/.cache"
+
+if stub.is_inside():
+    from pathlib import Path
+    import requests
+    import tarfile
+    import zipfile
+    from PIL import Image
+    from pdf2image import convert_from_path
+    import arxiv
 
 
 @stub.function()
-def resize_image(img: Image, max_size: int | None) -> Image:
+def resize_image(img: "Image.Image", max_size: int | None) -> "Image.Image":
     """
     Resize the image to the specified maximum size.
 
@@ -22,6 +37,8 @@ def resize_image(img: Image, max_size: int | None) -> Image:
     Returns:
         Image: Resized image.
     """
+    from PIL import Image
+
     if max_size is not None and (max_size < img.size[0] or max_size < img.size[1]):
         if img.size[0] < img.size[1]:
             img = img.resize(
@@ -173,7 +190,9 @@ def extract_image(
 
 
 @stub.function(
-    image=modal.Image.debian_slim().pip_install("pymupdf", "Pillow", "requests"),
+    image=modal.Image.debian_slim().pip_install(
+        "pymupdf", "Pillow", "requests", "mypy"
+    ),
     shared_volumes={
         SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
     },
@@ -337,6 +356,31 @@ def main(config_file: str = "configs/defaults.toml"):
     config = dacite.from_dict(data_class=Config, data=toml.load(config_file))
     print(config)
     extract_representative_images.call(config)
+
+
+@stub.function(
+    image=modal.Image.debian_slim()
+    .apt_install("poppler-utils")
+    .pip_install(
+        "pymupdf", "Pillow", "requests", "pdf2image", "arxiv", "mypy", "toml", "dacite"
+    ),
+    shared_volumes={
+        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    },
+    retries=0,
+    cpu=12,
+    mounts=[
+        modal.Mount.from_local_dir(
+            Path(__file__).parent.parent / "configs", remote_path="/root/configs"
+        ),
+    ],
+)
+def test():
+    import subprocess
+
+    subprocess.run(["ls", "-l"])
+    subprocess.run(["mypy", "--install-types"])
+    subprocess.run(["mypy", "src/image_extractor.py"])
 
 
 if __name__ == "__main__":

@@ -1,9 +1,6 @@
-from typing import Dict, Any, List, Tuple
+from typing import List
 import json
-import pickle
 from pathlib import Path
-
-from PIL import Image
 
 from .config import Config
 
@@ -67,7 +64,7 @@ class ContainerData:
             self.papers = pickle.load(f)
         self.num_data = len(self.papers)
 
-    def get_image(self, index:int) -> Image.Image | None:
+    def get_image(self, index:int) -> "Image.Image" | None:
         if index < self.num_data and self.papers[index].get("image"):
             return self.papers[index]["image"]
         else:

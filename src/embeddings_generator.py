@@ -5,7 +5,6 @@ Generate embeddings by OpenAI API.
 """
 
 from typing import List, Any, Dict
-import numpy as np
 
 import modal
 
@@ -45,7 +44,7 @@ def dict_list_to_list_dict(papers: List[Any], keys: List[str]) -> Dict[str, List
 )
 def generate_embeddings(
     text_list: List[str], model: str, batch_size: int = 20
-) -> np.ndarray:
+) -> "np.ndarray":
     """
     Generate embeddings for a list of texts using the specified model.
 

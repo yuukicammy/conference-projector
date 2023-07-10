@@ -1,18 +1,8 @@
-from typing import Dict, Any, List, Tuple
-
-import dash
-from dash import dcc
-from dash import html
-import dash_bootstrap_components as dbc
-import pandas as pd
-import plotly
-import plotly.express as px
-from dash.dependencies import Input, Output, State
+from typing import Dict, List
 
 from .config import Config
 from .webapp_data import ContainerData
 from .utils import insert_line_breaks
-
 
 class Layout:
     def __init__(self, config: Config, container_data: ContainerData) -> None:
@@ -20,8 +10,8 @@ class Layout:
         self.container_data = container_data
 
     def paper_title_block(
-        self, df: pd.core.frame.DataFrame, index: int, rank: int
-    ) -> dbc.Row:
+        self, df: "pd.core.frame.DataFrame", index: int, rank: int
+    ) -> "dbc.Row":
         title_text = (
             f'{str(rank)}.  {df.at[index, "title"]}'
             if 0 < rank
@@ -46,8 +36,8 @@ class Layout:
         )
 
     def paper_info_base(
-        self, df: pd.core.frame.DataFrame, index: int, en_mode: bool = False
-    ) -> dbc.Row:
+        self, df: "pd.core.frame.DataFrame", index: int, en_mode: bool = False
+    ) -> "dbc.Row":
         contents = [
             dbc.Col(
                 dcc.Markdown(
@@ -73,12 +63,12 @@ class Layout:
 
     def paper_block(
         self,
-        df: pd.core.frame.DataFrame,
+        df: "pd.core.frame.DataFrame",
         index: int,
         rank: int,
         options: List[str],
         en_mode: bool = False,
-    ) -> dbc.Row:
+    ) -> "dbc.Row":
         title_block = self.paper_title_block(df=df, index=index, rank=rank)
         info_base = self.paper_info_base(df=df, index=index, en_mode=en_mode)
 
@@ -98,13 +88,13 @@ class Layout:
 
     def description_block(
         self,
-        df: pd.core.frame.DataFrame,
+        df: "pd.core.frame.DataFrame",
         indices: List[int],
         options: List[str],
         start_rank: int,
         im_width="100%",
         en_mode: bool = False,
-    ) -> dbc.Row:
+    ) -> "dbc.Row":
         content = []
         if indices is None or len(indices) == 0:
             content = [dcc.Markdown(f"### {self.config.webapp.text_top_description}")]
@@ -150,7 +140,7 @@ class Layout:
 
     def default_figure(
         self,
-        df: pd.core.frame.DataFrame,
+        df: "pd.core.frame.DataFrame",
         key: str,
         method: str,
         dim: int,
@@ -218,12 +208,12 @@ class Layout:
 
     def selected_figure(
         self,
-        df: pd.core.frame.DataFrame,
+        df: "pd.core.frame.DataFrame",
         key: str,
         method: str,
         dim: int,
         indices: List[int] = None,
-    ) -> plotly.graph_objs._figure.Figure:
+    ) -> "plotly.graph_objs._figure.Figure":
         feature_name = f"{key}_{method}_{str(dim)}"
         info = self.figure_info(
             key=key,
@@ -301,8 +291,8 @@ class Layout:
         return fig
 
     def selected_paper_block(
-        self, df: pd.core.frame.DataFrame, index: int, en_mode: bool = False
-    ) -> dbc.Col:
+        self, df: "pd.core.frame.DataFrame", index: int, en_mode: bool = False
+    ) -> "dbc.Col":
         content = self.description_block(
             df=df,
             indices=[index],
@@ -368,7 +358,7 @@ class Layout:
         self,
         options: List[str],
         all_options: List[Dict[str, str]],
-    ) -> dbc.Col:
+    ) -> "dbc.Col":
         return dbc.Col(
             dbc.Row(
                 [
@@ -425,7 +415,7 @@ class Layout:
         )
 
     @property
-    def navbar(self) -> dbc.NavbarSimple:
+    def navbar(self) -> "dbc.NavbarSimple":
         return dbc.NavbarSimple(
             className="dash-header",
             children=[
@@ -474,7 +464,7 @@ class Layout:
         )
 
     @property
-    def footer(self) -> dcc.Markdown:
+    def footer(self) -> "dcc.Markdown":
         return dcc.Markdown(
             "© 2023 yuukicammy",
             style={
@@ -485,7 +475,7 @@ class Layout:
         )
 
     @property
-    def embedding_selector(self) -> dcc.RadioItems:
+    def embedding_selector(self) -> "dcc.RadioItems":
         return dcc.RadioItems(
             id="embeddings",
             options=self.config.webapp.embedding_options,
@@ -502,7 +492,7 @@ class Layout:
         )
 
     @property
-    def top_margin(self) -> html.Div:
+    def top_margin(self) -> "html.Div":
         return html.Div(
             style={
                 "height": "10px",
@@ -510,7 +500,7 @@ class Layout:
         )
 
     @property
-    def reduction_algo_selector(self) -> dbc.Col:
+    def reduction_algo_selector(self) -> "dbc.Col":
         return dbc.Col(
             [
                 dbc.Badge(
@@ -543,7 +533,7 @@ class Layout:
         )
 
     @property
-    def dimension_selector(self) -> dbc.Col:
+    def dimension_selector(self) -> "dbc.Col":
         return dbc.Col(
             [
                 dbc.Badge(
@@ -577,7 +567,7 @@ class Layout:
         )
 
     @property
-    def recommendation_contents(self) -> dcc.Loading:
+    def recommendation_contents(self) -> "dcc.Loading":
         return dcc.Loading(
             type="default",
             children=[
@@ -602,11 +592,11 @@ class Layout:
         )
 
     @property
-    def detail_view(self) -> dbc.Col:
+    def detail_view(self) -> "dbc.Col":
         return dbc.Col(id="details-row", children=[], width="0%")
 
     @property
-    def graph_view(self) -> dbc.Col:
+    def graph_view(self) -> "dbc.Col":
         return dbc.Col(
             id="graph-area",
             children=[
@@ -652,7 +642,7 @@ class Layout:
         )
 
     @property
-    def body_layout(self) -> dbc.Container:
+    def body_layout(self) -> "dbc.Container":
         return dbc.Container(
             children=[
                 dcc.Store(id="shared-data"),
@@ -666,7 +656,7 @@ class Layout:
         )
 
     @property
-    def screen_layout(self) -> html.Div:
+    def screen_layout(self) -> "html.Div":
         return html.Div(
             [
                 dcc.Location(id="url", refresh=False),

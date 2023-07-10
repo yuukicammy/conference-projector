@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import Dict, Any, List, Tuple
 import modal
 
-from dash import html
-import dash_bootstrap_components as dbc
+# from dash import html
+# import dash_bootstrap_components as dbc
 
 from .config import Config, ProjectConfig
 from .webapp_image_builder import build_modal_image
@@ -69,8 +69,10 @@ stub.cache = modal.Dict.new()
 
 if stub.is_inside():
     from typing import Dict, Any, List, Tuple
+
     import numpy as np
-    
+    import dacite
+    import toml
     import dash
     from dash import dcc
     from dash import html
@@ -79,7 +81,10 @@ if stub.is_inside():
     import plotly
     import plotly.express as px
     from dash.dependencies import Input, Output, State
-        
+    from scipy.spatial import cKDTree
+    from urllib.parse import urlencode
+    import pickle
+    from PIL import Image
 
 
 @stub.cls(
@@ -89,9 +94,6 @@ if stub.is_inside():
 )
 class DashApp: 
     def __init__(self):
-        import dacite
-        import toml
-
         self.config = dacite.from_dict(data_class=Config, data=toml.load(CONFIG_FILE))
 
         self.container_data = ContainerData(config=self.config)
@@ -166,12 +168,11 @@ class DashApp:
         return self.app.server
         
     @modal.method()
-    def get_layout(self) -> html.Div:
+    def get_layout(self) -> "html.Div":
         return self.layout.screen_layout
 
     @modal.method()
     def k_nearest(self, index: int, feature_name: str) -> Tuple[List[float], List[int]]:
-        from scipy.spatial import cKDTree
         if stub.app.cache.contains(
             f"indices-{str(index)}-{feature_name}"
         ) and stub.app.cache.contains(f"distances-{str(index)}-{feature_name}"):
@@ -232,7 +233,6 @@ class DashApp:
         method: str = None,
         dim: int = None,
     ):
-        from urllib.parse import urlencode
         params = {
             "node": node,
             "e": key,
