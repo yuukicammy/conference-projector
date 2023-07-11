@@ -16,7 +16,7 @@ SHARED_ROOT = "/root/.cache"
 
 modal_image = modal.Image.debian_slim().pip_install("azure-cosmos")
 stub = modal.Stub(
-    ProjectConfig._stab_db,
+    ProjectConfig._stub_db,
     image=modal_image,
     secrets=[modal.Secret.from_name("cosmos-secret")],
     mounts=[
@@ -26,12 +26,12 @@ stub = modal.Stub(
     ],
 )
 
-stub.cache = modal.Dict()
+stub.cache = modal.Dict.new()
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def get_container(db_config: DBConfig):
@@ -62,8 +62,8 @@ def get_container(db_config: DBConfig):
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
     timeout=3600,
 )
@@ -84,19 +84,23 @@ def get_all_papers(
         List[Dict[str, Any]]: The list of papers.
 
     """
-    from modal import container_app
 
     dict_str: str = (
         f"{db_config.uri}-{db_config.database_id}-{db_config.container_id}-all-papers"
     )
-    try:
-        if force:
-            raise Exception("")
-        item_list = container_app.cache[dict_str]
-    except:
+    if (
+        force
+        or stub.name != ProjectConfig._stub_db
+        or not stub.is_inside()
+        or not stub.app.cache.contains(dict_str)
+    ):
         container = get_container(db_config)
         item_list = list(container.read_all_items())
-        container_app.cache[dict_str] = item_list
+        if stub.is_inside():
+            stub.app.cache[dict_str] = item_list
+    else:
+        item_list = stub.app.cache[dict_str]
+
     if max_item_count is not None and 0 < max_item_count:
         return item_list[:max_item_count]
     else:
@@ -104,8 +108,8 @@ def get_all_papers(
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def query_items(
@@ -145,8 +149,8 @@ def query_items(
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def get_num_papers(db_config: DBConfig) -> int:
@@ -167,8 +171,8 @@ def get_num_papers(db_config: DBConfig) -> int:
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def register_from_json(db_config: DBConfig, json_path: str) -> None:
@@ -194,8 +198,8 @@ def register_from_json(db_config: DBConfig, json_path: str) -> None:
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def upsert_item(db_config: DBConfig, item: Dict[Any, Any]) -> Dict[str, Any]:
@@ -210,16 +214,14 @@ def upsert_item(db_config: DBConfig, item: Dict[Any, Any]) -> Dict[str, Any]:
         Dict[str, Any]: The upserted item.
 
     """
-    import azure.cosmos.cosmos_client as cosmos_client
-
     container = create_db(db_config)
     res = container.upsert_item(body=item)
     return res
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
     secret=modal.Secret.from_name("cosmos-secret"),
 )

@@ -122,7 +122,8 @@ def generate_summaries(config: Config) -> None:
         None
     """
     import time
-    papers = modal.Function.lookup(config.project._stab_db, "get_all_papers").call(
+
+    papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
         config.db
     )
     for idx, paper in enumerate(papers):
@@ -164,7 +165,7 @@ def generate_summaries(config: Config) -> None:
                 time_end = time.perf_counter()
                 print(f"chat request: {time_end- time_sta}")
                 time_sta = time.perf_counter()
-                modal.Function.lookup(config.project._stab_db, "upsert_item").call(
+                modal.Function.lookup(config.project._stub_db, "upsert_item").call(
                     config.db, paper
                 )
                 time_end = time.perf_counter()

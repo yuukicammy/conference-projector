@@ -13,10 +13,14 @@ CONFIG_FILE = "configs/defaults.toml"
 class ModalImageBuilder:
     def __init__(self, config: Config):
         self.config = config
-        self.reduced_feature_file = Path(SHARED_ROOT)/self.config.files.reduced_feature_file
-        self.trees_file = (Path(SHARED_ROOT)/self.config.files.reduced_feature_file).parent/ f"trees-{self.config.project.max_papers}.pickle"
-        self.papers_file =Path(SHARED_ROOT) / self.config.files.papers_file
-        self.data_frame_file = Path(SHARED_ROOT)/config.files.data_frame_file
+        self.reduced_feature_file = (
+            Path(SHARED_ROOT) / self.config.files.reduced_feature_file
+        )
+        self.trees_file = (
+            Path(SHARED_ROOT) / self.config.files.reduced_feature_file
+        ).parent / f"trees-{self.config.project.max_papers}.pickle"
+        self.papers_file = Path(SHARED_ROOT) / self.config.files.papers_file
+        self.data_frame_file = Path(SHARED_ROOT) / config.files.data_frame_file
         self.reduced_features = None
         self.trees = None
         self.papers = None
@@ -130,17 +134,19 @@ class ModalImageBuilder:
         except Exception as e:
             print(f"cannot load image from {image_path}. \n{e}")
             return None
-    
-    def load_pickle(self, path:Path):
+
+    def load_pickle(self, path: Path):
         import pickle
+
         if not self.config.webapp.init_cache and path.is_file():
             with open(path, "rb") as f:
                 obj = pickle.load(f)
                 return obj
         return None
-    
+
     def create_features_and_trees(self) -> None:
         from scipy.spatial import cKDTree
+
         trees = {}
         reduced_features = {}
         for key, path in self.config.files.embeddings_files.items():
@@ -169,9 +175,9 @@ class ModalImageBuilder:
 
         print("Loading papers from Azure Cosmos.")
         print(self.config.db)
-        papers = modal.Function.lookup(self.config.project._stab_db, "get_all_papers").call(
-            self.config.db, self.config.project.max_papers
-        )
+        papers = modal.Function.lookup(
+            self.config.project._stub_db, "get_all_papers"
+        ).call(self.config.db, self.config.project.max_papers)
         print(f"Done. The num of papers: {len(papers)}.")
 
         print("Loading image files...")
@@ -189,8 +195,8 @@ class ModalImageBuilder:
         import pandas as pd
 
         print("Makign data_frame...")
-        assert(0 < len(self.papers))
-        assert(self.reduced_features is not None)
+        assert 0 < len(self.papers)
+        assert self.reduced_features is not None
         data_frame = {}
         for key in self.papers[0].keys():
             if key != "image" and key[0] != "_":
@@ -207,12 +213,12 @@ class ModalImageBuilder:
             for method in self.config.webapp.dimension_reduction_options:
                 for dim in self.config.webapp.dimension_options:
                     feature_name = f'{key}_{method["value"]}_{str(dim["value"])}'
-                    data_frame[f"{feature_name}_x"] = self.reduced_features[feature_name][
-                        :, 0
-                    ]
-                    data_frame[f"{feature_name}_y"] = self.reduced_features[feature_name][
-                        :, 1
-                    ]
+                    data_frame[f"{feature_name}_x"] = self.reduced_features[
+                        feature_name
+                    ][:, 0]
+                    data_frame[f"{feature_name}_y"] = self.reduced_features[
+                        feature_name
+                    ][:, 1]
                     if int(dim["value"]) == 3:
                         data_frame[f"{feature_name}_z"] = self.reduced_features[
                             feature_name
@@ -233,12 +239,13 @@ class ModalImageBuilder:
                 pickle.dump(self.reduced_features, f)
             with open(self.trees_file, "wb") as f:
                 pickle.dump(self.trees, f)
-            print("Done preparation for features and trees. Saved them into SharedVolume.")
+            print(
+                "Done preparation for features and trees. Saved them into SharedVolume."
+            )
         else:
-            print(f'Done loading reduced_features and trees.')
-            print(f'reduced_features: type {type(self.reduced_features)}.')
-            print(f'trees: type {type(self.trees)}.')
-
+            print(f"Done loading reduced_features and trees.")
+            print(f"reduced_features: type {type(self.reduced_features)}.")
+            print(f"trees: type {type(self.trees)}.")
 
         self.papers = self.load_pickle(self.papers_file)
         if self.papers is None:
@@ -247,22 +254,25 @@ class ModalImageBuilder:
                 pickle.dump(self.papers, f)
             print("Done preparation for papers. Saved it into SharedVolume.")
         else:
-            print(f'Done loading papers with type {type(self.papers)} and size {len(self.papers)}.')
+            print(
+                f"Done loading papers with type {type(self.papers)} and size {len(self.papers)}."
+            )
 
         self.data_frame = self.load_pickle(self.data_frame_file)
         if self.data_frame is None:
             self.data_frame = self.create_data_frame()
             with open(
-            self.data_frame_file,
-            "wb",
-        ) as f:
+                self.data_frame_file,
+                "wb",
+            ) as f:
                 pickle.dump(self.data_frame, f)
             print("Done preparation for data_frame. Saved it into SharedVolume.")
         else:
-            print(f'Done loading data_frame with type {type(self.data_frame)} and size {len(self.data_frame)}.')
+            print(
+                f"Done loading data_frame with type {type(self.data_frame)} and size {len(self.data_frame)}."
+            )
         # for col in self.data_frame.columns:
         #     print(f"{col}: {len(self.data_frame[col])}")
-
 
 
 def build_modal_image():
@@ -271,7 +281,7 @@ def build_modal_image():
     import toml
     import numpy as np
     import pandas as pd
-    
+
     import dash
     from dash import dcc
     from dash import html
@@ -291,12 +301,13 @@ def build_modal_image():
 
     # Store large size data in Image instead of SharedVolume.
     with open(config.files.reduced_feature_file, "wb") as f:
-            pickle.dump(builder.reduced_features, f)
+        pickle.dump(builder.reduced_features, f)
     with open(
-        Path(config.files.reduced_feature_file).parent/ f"trees-{config.project.max_papers}",
-            "wb",
-        ) as f:
-            pickle.dump(builder.trees, f)
+        Path(config.files.reduced_feature_file).parent
+        / f"trees-{config.project.max_papers}",
+        "wb",
+    ) as f:
+        pickle.dump(builder.trees, f)
     with open(config.files.papers_file, "wb") as f:
         pickle.dump(builder.papers, f)
     with open(config.files.data_frame_file, "wb") as f:

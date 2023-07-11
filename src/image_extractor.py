@@ -169,7 +169,7 @@ def extract_image(
     if not (Path(SHARED_ROOT) / paper["image_path"]).is_file():
         paper["image_path"] = ""
     paper["id"] = str(idx)
-    modal.Function.lookup(config.project._stab_db, "upsert_item").call(config.db, paper)
+    modal.Function.lookup(config.project._stub_db, "upsert_item").call(config.db, paper)
 
 
 @stub.function(
@@ -277,7 +277,7 @@ def extract_representative_images(config: Config) -> None:
     import json
     import concurrent
 
-    papers = modal.Function.lookup(config.project._stab_db, "get_all_papers").call(
+    papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
         config.db, config.project.max_papers
     )
 
@@ -303,7 +303,7 @@ def extract_representative_images(config: Config) -> None:
                 tasks.append(
                     executor.submit(
                         modal.Function.lookup(
-                            config.project._stab_db, "upsert_item"
+                            config.project._stub_db, "upsert_item"
                         ).call,
                         config.db,
                         paper,

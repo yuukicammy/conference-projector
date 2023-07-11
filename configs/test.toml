@@ -1,0 +1,122 @@
+config_version = "0.0.1"
+
+[project]
+dataname = "test" 
+max_papers = 3 # minus value means no limits.
+num_workers = 1 
+stab_files = ["src/embeddings_generator.py", "src/html_parser.py", "src/paperimages.py", "src/summaries_generator.py"] 
+
+[pipeline]
+deplpoy_stubs = true
+download_data_locally = true
+initialize_volume = true
+run_embed = true
+run_html_parse = true
+run_paper_image = true
+run_summarize = true
+
+[files]
+force_extract_image = true
+image_max_size = 400
+image_name_width = 4
+json_indent = 4
+local_output_dir = "test/data"
+save_json = false
+
+[html_parser]
+base_url = "https://openaccess.thecvf.com/"
+path_papers = "CVPR2023?day=all"
+prefix_abst = '<div id="abstract">'
+prefix_arxiv = '<a href="http://arxiv.org/abs/'
+prefix_item = '<dt class="ptitle"><br><a href="/'
+prefix_pdf = '<meta name="citation_pdf_url" content="'
+prefix_title = '<div id="papertitle">'
+suffix_abst = '</div>\n    <font size="5">\n    <br><b>Related Material</b>'
+suffix_arxiv = '">arXiv</a>'
+suffix_item = '">'
+suffix_pdf = '">\n</head>'
+suffix_title = '\n    <dd>\n    </div>\n    <div id="authors">'
+
+[embedding]
+# see https://platform.openai.com/docs/guides/production-best-practices/improving-latencies
+batch_size = 1
+keys = ["title", "abstract", "category_en", "application_en"]
+model = "text-embedding-ada-002"
+retry = 5
+
+[summary]
+description = "Formatted summary of the paper."
+function_schema_file = "data/prompts/function_schema.json"
+model = "gpt-3.5-turbo-0613"
+prompt_file = "data/prompts/summary_prompt.txt"
+retry = 5
+sleep = 0.1
+
+[webapp]
+color_not_selectd = "#c099a0"
+color_selected = "#895b8a"
+margine_default = "10px"
+margine_title_bottom = "20px"
+node_size_default = 8
+node_symbol_clicked = "star"
+node_symbol_default = "circle"
+node_symbol_selected = "diamond"
+num_colors = 2000
+num_neighborhoods = 10
+size_code = 12
+size_default = 12
+size_title = 20
+
+text_concern_description = "From what perspective do you search for papers?"
+text_details_default = "Click a node for paper information."
+text_top_description = "Clicking on a node will display information about that paper and papers close to it."
+
+title = "Conference Projector: CVPR 2023"
+
+label_dimension = "Dimension"
+label_distance = "Distance"
+label_embeddings = "Perspective"
+label_options = "Options"
+label_paper_details = "Your Selection and Recommendations"
+label_projection_algorithm = "Projection Algorithm"
+
+[[webapp.embedding_options]]
+label = "Category"
+value = "category_en"
+
+[[webapp.embedding_options]]
+label = "Application"
+value = "application_en"
+
+[[webapp.embedding_options]]
+label = "Title"
+value = "title"
+
+[[webapp.embedding_options]]
+label = "Abstract"
+value = "abstract"
+
+[[webapp.dimension_options]]
+label = "2D"
+value = 2
+
+[[webapp.dimension_options]]
+label = "3D"
+value = 3
+
+[[webapp.dimension_reduction_options]]
+label = "PCA"
+value = "pca"
+
+[[webapp.dimension_reduction_options]]
+label = "UMAP"
+value = "umap"
+
+[[webapp.dimension_reduction_options]]
+label = "t-SNE"
+value = "tsne"
+
+[db]
+container_id = "Container-01"
+database_id = "test"
+uri = "https://papers-projector.documents.azure.com:443/"

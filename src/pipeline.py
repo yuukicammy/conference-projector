@@ -8,7 +8,7 @@ import modal
 from .config import Config, ProjectConfig
 from .webapp import CONFIG_FILE
 
-stub = modal.Stub(ProjectConfig._stab_pipeline)
+stub = modal.Stub(ProjectConfig._stub_pipeline)
 
 
 def run_pipeline(config: Config):
@@ -23,7 +23,7 @@ def run_pipeline(config: Config):
         # Deploy all modal stabs
         if config.pipeline.deplpoy_stubs:
             print("Deploying modal stubs.")
-            for name in config.project.stab_files:
+            for name in config.project.stub_files:
                 if name == Path(__file__).name:
                     continue  # skip this stub
                 subprocess.run(["modal", "deploy", f"{name}"])
@@ -31,7 +31,7 @@ def run_pipeline(config: Config):
         # Parsing a website with a list of papers and creating a metadata file of papers.
         if config.pipeline.run_html_parse:
             print("Parsing a website with a list of papers.")
-            modal.Function.lookup(config.project._stab_html_parser, "parse_html").call(
+            modal.Function.lookup(config.project._stub_html_parser, "parse_html").call(
                 html_config=config.html_parser,
                 file_config=config.files,
                 project_config=config.project,
@@ -61,7 +61,7 @@ def run_pipeline(config: Config):
         if config.pipeline.run_embed:
             print("Generating embeddings.")
             modal.Function.lookup(
-                config.project._stab_embedding, "save_embeddings"
+                config.project._stub_embedding, "save_embeddings"
             ).call(config.embedding, config.files, config.project)
 
     except Exception as e:

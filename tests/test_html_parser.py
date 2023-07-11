@@ -1,20 +1,16 @@
 import unittest
 
-from .test_common import PaperVizTestCase
-from src.html_parser import parse_html, pattern_match, get_html
+from .test_common import CPTestCase
+from src.html_parser import parse_html
+from src.cosmos import get_all_papers
 
 
-class TestParseHTML(PaperVizTestCase):
+class TestParseHTML(CPTestCase):
     def test_parse_html(self):
-        import modal
-
         papers = parse_html(self.config)
         assert len(papers) == 3
 
-        db_items = modal.Function.lookup(
-            self.config.project._stab_db,
-            "get_all_papers",
-        ).call(self.config.db, 3, force=True)
+        db_items = get_all_papers(self.config.db, 3, force=True)
         assert len(db_items) == 3
 
         expected = [
@@ -44,68 +40,6 @@ class TestParseHTML(PaperVizTestCase):
         for p, d, e in zip(papers, db_items, expected):
             for key in e.keys():
                 assert p[key] == e[key] and d[key] == e[key]
-
-
-class TestGetHTML(PaperVizTestCase):
-    def test_get_html(self):
-        url = "https://example.com/"
-        expected = html = """<!doctype html>
-<html>
-<head>
-    <title>Example Domain</title>
-
-    <meta charset="utf-8" />
-    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style type="text/css">
-    body {
-        background-color: #f0f0f2;
-        margin: 0;
-        padding: 0;
-        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        
-    }
-    div {
-        width: 600px;
-        margin: 5em auto;
-        padding: 2em;
-        background-color: #fdfdff;
-        border-radius: 0.5em;
-        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);
-    }
-    a:link, a:visited {
-        color: #38488f;
-        text-decoration: none;
-    }
-    @media (max-width: 700px) {
-        div {
-            margin: 0 auto;
-            width: auto;
-        }
-    }
-    </style>    
-</head>
-
-<body>
-<div>
-    <h1>Example Domain</h1>
-    <p>This domain is for use in illustrative examples in documents. You may use this
-    domain in literature without prior coordination or asking for permission.</p>
-    <p><a href="https://www.iana.org/domains/example">More information...</a></p>
-</div>
-</body>
-</html>
-"""
-        actual = get_html(url)
-        assert expected == actual
-
-
-class TestPatternMatch(PaperVizTestCase):
-    def test_pattern_match(self):
-        string = "<a>test1</a>\n<a>test2</a>"
-        actual = pattern_match("<a>", "</a>", string)
-        expected = ["test1", "test2"]
-        self.assertEqual(actual, expected)
 
 
 if __name__ == "__main__":

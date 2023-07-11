@@ -18,17 +18,18 @@ def stab_dict_factory(items: list[tuple[str, str]]) -> dict[str, str]:
 class ProjectConfig:
     _name: str = "paper-viz"
     _shared_vol: str = "paper-viz-vol"
-    _stab_embedding: str = f"{_name}-embedding"
-    _stab_html_parser: str = f"{_name}-html-parser"
+    _stub_embedding: str = f"{_name}-embedding"
+    _stub_scraper: str = f"{_name}-scraper"
+    _stub_html_parser: str = f"{_name}-html-parser"
     _stab_paper_image: str = f"{_name}-extract-paper-image"
     _stab_summary: str = f"{_name}-summary"
-    _stab_tfboard_webapp: str = f"{_name}-tfboard-webapp"
-    _stab_pipeline: str = f"{_name}-pipeline"
-    _stab_webapp: str = f"{_name}-webapp"
-    _stab_db: str = f"{_name}-db"
-    _stab_test: str = f"{_name}-test"
-    stab_names: List[str] = field(default_factory=list)
-    stab_files: List[str] = field(default_factory=list)
+    _stub_highlights: str = f"{_name}-highlights"
+    _stub_pipeline: str = f"{_name}-pipeline"
+    _stub_webapp: str = f"{_name}-webapp"
+    _stub_db: str = f"{_name}-db"
+    _stub_test: str = f"{_name}-test"
+    stub_names: List[str] = field(default_factory=list)
+    stub_files: List[str] = field(default_factory=list)
     num_workers: int = 0
     max_papers: int = None
     dataname: str = "cvpr2023"
@@ -56,7 +57,7 @@ class MedatadaFileConfig:
 
     # The following file paths are defined in __post_init__()
     reduced_feature_file: str = ""
-    papers_file: str = "" 
+    papers_file: str = ""
     data_frame_file: str = ""
 
     image_name_width: int = 4
@@ -141,10 +142,11 @@ class WebAppConfig:
     init_cache: bool = False
     width_figure: str = "60%"
     width_details: str = "40%"
-    web_title:str=""
-    web_description:str=""
-    web_icon:str = ""
-    title_url:str=""
+    web_title: str = ""
+    web_description: str = ""
+    web_icon: str = ""
+    title_url: str = ""
+
 
 @dataclass
 class DBConfig:
@@ -183,10 +185,10 @@ class Config:
         for key in self.embedding.keys:
             self.files.embeddings_files[key] = self.embedding_path(label=key)
 
-        self.project.stab_names = []
+        self.project.stub_names = []
         for key, value in vars(self.project).items():
             if key.startswith("_stab"):
-                self.project.stab_names.append(value)
+                self.project.stub_names.append(value)
 
     def embedding_path(self, label: str) -> str:
         return str(

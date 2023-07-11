@@ -11,7 +11,7 @@ import modal
 
 from .config import ProjectConfig, Config
 
-stub = modal.Stub(ProjectConfig._stab_embedding)
+stub = modal.Stub(ProjectConfig._stub_embedding)
 SHARED_ROOT = "/root/.cache"
 
 
@@ -97,7 +97,7 @@ def save_embeddings(config: Config) -> None:
     from pathlib import Path
     import numpy as np
 
-    papers = modal.Function.lookup(config.project._stab_db, "get_all_papers").call(
+    papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
         config.db
     )
     papers = papers[: config.project.max_papers]

@@ -9,17 +9,15 @@ from typing import List, Any, Dict
 
 from .config import ProjectConfig, Config
 
-stub = modal.Stub(ProjectConfig._stub_html_parser)
+stub = modal.Stub(ProjectConfig._stub_highlights)
 SHARED_ROOT = "/root/.cache"
 
 
 @stub.function(
     image=modal.Image.debian_slim(),
     shared_volumes={
-        SHARED_ROOT: modal.SharedVolume().persist(ProjectConfig._shared_vol)
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
-    retries=0,
-    cpu=1,
 )
 def parse_html(config: Config) -> List[Dict[str, Any]]:
     """
@@ -38,7 +36,7 @@ def parse_html(config: Config) -> List[Dict[str, Any]]:
     papers = []
 
     for idx, path in enumerate(
-        modal.Function.lookup(ProjectConfig._stub_scraper, "pattern_match").call(
+        pattern_match(
             config.html_parser.prefix_item,
             config.html_parser.suffix_item,
             get_html(config.html_parser.base_url + config.html_parser.path_papers),
@@ -46,14 +44,12 @@ def parse_html(config: Config) -> List[Dict[str, Any]]:
     ):
         if config.project.max_papers <= len(papers):
             break
+        print(path)
         paper_url = config.html_parser.base_url + path
-        print(f"request url: {paper_url}")
         paper_html = get_html(url=paper_url)
 
         # find title
-        title = modal.Function.lookup(
-            ProjectConfig._stub_scraper, "pattern_match"
-        ).call(
+        title = pattern_match(
             prefix=config.html_parser.prefix_title,
             suffix=config.html_parser.suffix_title,
             string=paper_html,
@@ -64,9 +60,7 @@ def parse_html(config: Config) -> List[Dict[str, Any]]:
         assert 0 < len(title)
 
         # find abstract
-        abstract = modal.Function.lookup(
-            ProjectConfig._stub_scraper, "pattern_match"
-        ).call(
+        abstract = pattern_match(
             prefix=config.html_parser.prefix_abst,
             suffix=config.html_parser.suffix_abst,
             string=paper_html,
@@ -77,9 +71,7 @@ def parse_html(config: Config) -> List[Dict[str, Any]]:
         assert 0 < len(abstract)
 
         # find pdf url
-        pdfurl = modal.Function.lookup(
-            ProjectConfig._stub_scraper, "pattern_match"
-        ).call(
+        pdfurl = pattern_match(
             prefix=config.html_parser.prefix_pdf,
             suffix=config.html_parser.suffix_pdf,
             string=paper_html,
@@ -90,9 +82,7 @@ def parse_html(config: Config) -> List[Dict[str, Any]]:
         assert 0 < len(pdfurl)
 
         # find arxiv id
-        arxiv_id = modal.Function.lookup(
-            ProjectConfig._stub_scraper, "pattern_match"
-        ).call(
+        arxiv_id = pattern_match(
             prefix=config.html_parser.prefix_arxiv,
             suffix=config.html_parser.suffix_arxiv,
             string=paper_html,
@@ -152,6 +142,37 @@ def make_pattern(prefix: str, suffix: str, reg: str = ".*") -> str:
         str: Created regular expression pattern.
     """
     return prefix + reg + suffix
+
+
+@stub.function()
+def pattern_match(
+    prefix: str, suffix: str, string, reg: str = ".*", flag: int = 0
+) -> List[str]:
+    """
+    Perform pattern matching on the given string using the specified prefix and suffix.
+
+    Args:
+        prefix (str): Prefix of the pattern.
+        suffix (str): Postfix of the pattern.
+        string: String to perform pattern matching on.
+        reg (str): Regular expression pattern. Default is '.*'.
+        flag (int): Optional flag for pattern matching. Default is 0.
+
+    Returns:
+        List[str]: List of matched strings.
+    """
+    import re
+
+    prefix = prefix.replace("\\n", "\n")
+    suffix = suffix.replace("\\n", "\n")
+    results = []
+    for item in re.findall(
+        pattern=make_pattern(prefix, suffix, reg), string=string, flags=flag
+    ):
+        item = item[len(prefix) : len(item) - len(suffix)]
+        assert 0 < len(item)
+        results.append(item)
+    return results
 
 
 @stub.local_entrypoint()
