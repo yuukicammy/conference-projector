@@ -9,7 +9,7 @@ from typing import List, Any, Dict
 
 from .config import ProjectConfig, Config
 
-stub = modal.Stub(ProjectConfig._stab_scraper)
+stub = modal.Stub(ProjectConfig._stub_scraper)
 SHARED_ROOT = "/root/.cache"
 
 
