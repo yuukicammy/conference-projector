@@ -28,6 +28,12 @@ stub = modal.Stub(
 
 stub.cache = modal.Dict.new()
 
+if stub.is_inside():
+    import os
+    import azure.cosmos.cosmos_client as cosmos_client
+    import azure.cosmos.exceptions as exceptions
+    from azure.cosmos.partition_key import PartitionKey
+
 
 @stub.function(
     network_file_systems={
@@ -45,19 +51,7 @@ def get_container(db_config: DBConfig):
         azure.cosmos.cosmos_client.CosmosContainer: The container client.
 
     """
-    import os
-    import azure.cosmos.documents as documents
-    import azure.cosmos.cosmos_client as cosmos_client
-    import azure.cosmos.exceptions as exceptions
-
-    client = cosmos_client.CosmosClient(
-        db_config.uri,
-        {"masterKey": os.environ["PRIMARY_KEY"]},
-        user_agent="CosmosDBPythonQuickstart",
-        user_agent_overwrite=True,
-    )
-    db = client.get_database_client(db_config.database_id)
-    container = db.get_container_client(db_config.container_id)
+    container = create_db(db_config=db_config)
     return container
 
 
@@ -94,7 +88,7 @@ def get_all_papers(
         or not stub.is_inside()
         or not stub.app.cache.contains(dict_str)
     ):
-        container = get_container(db_config)
+        container = create_db(db_config)
         item_list = list(container.read_all_items())
         if stub.is_inside():
             stub.app.cache[dict_str] = item_list
@@ -114,10 +108,9 @@ def get_all_papers(
 )
 def query_items(
     db_config: DBConfig,
-    container,
     query: str = 'SELECT * FROM c WHERE c.id < "200"',
     force: bool = False,
-):
+) -> List[Dict[str, str]]:
     """
     Query items from the Azure Cosmos DB.
 
@@ -135,17 +128,22 @@ def query_items(
     from modal import container_app
 
     dict_str: str = f"{db_config.uri}-{db_config.database_id}-{db_config.container_id}-query-{query}"
-    try:
-        if force:
-            raise Exception("")
-        items = container_app.cache[dict_str]
-    except:
-        container = get_container(db_config)
+    items = []
+    if (
+        force
+        or stub.name != ProjectConfig._stub_db
+        or not stub.is_inside()
+        or not stub.app.cache.contains(dict_str)
+    ):
+        container = create_db(db_config)
         items = list(
-            container.query_items(query=query, enable_cross_partition_query=False)
+            container.query_items(query=query, enable_cross_partition_query=True)
         )
-        container_app.cache[dict_str] = items
-    return items  # Convert Unicode strings to UTF-8
+        if stub.is_inside():
+            container_app.cache[dict_str] = items
+    else:
+        items = container_app.cache[dict_str]
+    return items
 
 
 @stub.function(
@@ -165,7 +163,7 @@ def get_num_papers(db_config: DBConfig) -> int:
 
     """
     query = "SELECT VALUE COUNT(1) FROM c"
-    container = get_container(db_config)
+    container = create_db(db_config)
     result = container.query_items(query, enable_cross_partition_query=True)
     return result[0]
 
@@ -215,8 +213,7 @@ def upsert_item(db_config: DBConfig, item: Dict[Any, Any]) -> Dict[str, Any]:
 
     """
     container = create_db(db_config)
-    res = container.upsert_item(body=item)
-    return res
+    return container.upsert_item(body=item)
 
 
 @stub.function(
@@ -236,11 +233,6 @@ def create_db(db_config: DBConfig):
         azure.cosmos.cosmos_client.CosmosContainer: The container client.
 
     """
-    import os
-    import azure.cosmos.cosmos_client as cosmos_client
-    import azure.cosmos.exceptions as exceptions
-    from azure.cosmos.partition_key import PartitionKey
-
     client = cosmos_client.CosmosClient(
         db_config.uri,
         {"masterKey": os.environ["PRIMARY_KEY"]},
@@ -256,14 +248,16 @@ def create_db(db_config: DBConfig):
         db = client.get_database_client(db_config.database_id)
         print("Database with id '{0}' was found".format(db_config.database_id))
 
-    # setup container for this sample
+    # setup container
     try:
         container = db.create_container(
-            id=db_config.container_id, partition_key=PartitionKey(path="/partitionKey")
+            id=db_config.container_id,
+            partition_key=PartitionKey(path="/partitionKey"),
+            offer_throughput=1000,
         )
         print("Container with id '{0}' created".format(db_config.container_id))
 
-    except exceptions.CosmosResourceExistsError:
+    except:
         container = db.get_container_client(db_config.container_id)
         print("Container with id '{0}' was found".format(db_config.container_id))
     return container
