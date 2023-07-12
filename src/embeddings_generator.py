@@ -100,7 +100,6 @@ def save_embeddings(config: Config) -> None:
     papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
         db_config=config.db, max_item_count=config.project.max_papers
     )
-    papers = papers[: config.project.max_papers]
 
     converted = dict_list_to_list_dict(papers, config.embedding.keys)
     for key, list_data in converted.items():
