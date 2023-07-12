@@ -10,7 +10,7 @@ import modal
 
 from .config import ProjectConfig, Config
 
-stub = modal.Stub(ProjectConfig._stab_summary)
+stub = modal.Stub(ProjectConfig._stub_summary)
 SHARED_ROOT = "/root/.cache"
 
 
@@ -124,7 +124,7 @@ def generate_summaries(config: Config) -> None:
     import time
 
     papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
-        config.db
+        db_config=config.db, max_item_count=config.project.max_papers
     )
     for idx, paper in enumerate(papers):
         retry = config.summary.retry
