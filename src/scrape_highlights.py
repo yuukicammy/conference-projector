@@ -5,6 +5,7 @@ Parses HTML and saves the list of papers to a database.
 """
 
 import modal
+from pathlib import Path
 from typing import List, Any, Dict
 
 from .config import ProjectConfig, Config
@@ -13,170 +14,77 @@ stub = modal.Stub(ProjectConfig._stub_highlights)
 SHARED_ROOT = "/root/.cache"
 
 
+def overwrite_image(
+    config: Config, img_url: str | None, paper: Dict[str, str]
+) -> Dict[str, str]:
+    import requests
+
+    if img_url in config.highlight.img_ignore_paths:
+        img_url = None
+    else:
+        img_url = config.highlight.img_base_url + img_url
+
+    if img_url is not None:
+        response = requests.get(img_url)
+        if response.status_code == 200:
+            file_path = (
+                Path(config.project.dataname)
+                / "top_images"
+                / (paper["id"].zfill(config.files.image_name_width) + ".png")
+            )
+            paper["image_path"] = str(file_path)
+            (Path(SHARED_ROOT) / file_path).parent.mkdir(parents=True, exist_ok=True)
+            with open(Path(SHARED_ROOT) / file_path, "wb") as f:
+                f.write(response.content)
+    return paper
+
+
 @stub.function(
-    image=modal.Image.debian_slim(),
-    shared_volumes={
+    image=modal.Image.debian_slim().pip_install("beautifulsoup4", "requests"),
+    network_file_systems={
         SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
+    timeout=3600,
 )
-def parse_html(config: Config) -> List[Dict[str, Any]]:
-    """
-    Parse HTML and extract relevant information.
-
-    Args:
-        config (Config): Configuration object.
-
-    Returns:
-        List[Dict[str, Any]]: List of dictionaries with extracted information.
-    """
+def scrape_award(config: Config) -> List[Dict[str, Any]]:
     import json
     from pathlib import Path
     import re
+    from bs4 import BeautifulSoup
+    import requests
 
-    papers = []
+    print(config.highlight.award_details_url)
+    html = modal.Function.lookup(ProjectConfig._stub_scraper, "get_html").call(
+        url=config.highlight.award_details_url
+    )
+    soup = BeautifulSoup(html, "html.parser")
 
-    for idx, path in enumerate(
-        pattern_match(
-            config.html_parser.prefix_item,
-            config.html_parser.suffix_item,
-            get_html(config.html_parser.base_url + config.html_parser.path_papers),
-        )
-    ):
-        if config.project.max_papers <= len(papers):
-            break
-        print(path)
-        paper_url = config.html_parser.base_url + path
-        paper_html = get_html(url=paper_url)
+    def scrape(award_title: str):
+        highlight_divs = soup.find_all("div", text=award_title)
+        for div in highlight_divs:
+            title = div.find_next("a", class_="small-title").text
+            img_url = div.find_next("img")["src"]
+            print("Title:", title)
+            print("Image URL:", img_url)
+            items = modal.Function.lookup(ProjectConfig._stub_db, "query_items").call(
+                db_config=config.db,
+                query=f'SELECT * FROM c WHERE c.title = "{title}"',
+                force=True,
+            )
+            if items is not None and len(items) == 1:
+                paper = items[0]
+                paper["award"] = award_title
+                paper = overwrite_image(config=config, img_url=img_url, paper=paper)
+                modal.Function.lookup(ProjectConfig._stub_db, "upsert_item").call(
+                    db_config=config.db, item=paper
+                )
 
-        # find title
-        title = pattern_match(
-            prefix=config.html_parser.prefix_title,
-            suffix=config.html_parser.suffix_title,
-            string=paper_html,
-            flag=re.DOTALL,
-        )
-        assert 0 < len(title)
-        title = title[0].strip()  # remove the first and the last spaces
-        assert 0 < len(title)
-
-        # find abstract
-        abstract = pattern_match(
-            prefix=config.html_parser.prefix_abst,
-            suffix=config.html_parser.suffix_abst,
-            string=paper_html,
-            flag=re.DOTALL,
-        )
-        assert 0 < len(abstract)
-        abstract = abstract[0].strip()
-        assert 0 < len(abstract)
-
-        # find pdf url
-        pdfurl = pattern_match(
-            prefix=config.html_parser.prefix_pdf,
-            suffix=config.html_parser.suffix_pdf,
-            string=paper_html,
-            flag=re.DOTALL,
-        )
-        assert 0 < len(pdfurl)
-        pdfurl = pdfurl[0].strip()
-        assert 0 < len(pdfurl)
-
-        # find arxiv id
-        arxiv_id = pattern_match(
-            prefix=config.html_parser.prefix_arxiv,
-            suffix=config.html_parser.suffix_arxiv,
-            string=paper_html,
-        )
-        arxiv_id = "" if len(arxiv_id) == 0 else arxiv_id[0].strip()
-
-        paper = {
-            "url": paper_url,
-            "pdf_url": pdfurl,
-            "arxiv_id": arxiv_id,
-            "title": title,
-            "abstract": abstract,
-        }
-        papers.append(paper)
-        paper["id"] = str(idx)
-        modal.Function.lookup(config.project._stub_db, "upsert_item").call(
-            config.db, paper
-        )
-
-    if config.files.save_json:
-        json_path = Path(SHARED_ROOT) / config.files.json_file
-        with open(str(json_path), "w", encoding="utf-8") as fw:
-            json.dump(papers, fw, indent=config.files.json_indent, ensure_ascii=False)
-            print(f"Saved a json file: {json_path}")
-
-    return papers
-
-
-@stub.function()
-def get_html(url: str) -> str:
-    """
-    Get the HTML content from the specified URL.
-
-    Args:
-        url (str): URL of the website.
-
-    Returns:
-        str: HTML content as a string.
-    """
-    import urllib
-
-    response = urllib.request.urlopen(url=url)
-    return response.read().decode()  # utf-8
-
-
-@stub.function()
-def make_pattern(prefix: str, suffix: str, reg: str = ".*") -> str:
-    """
-    Create a regular expressionpattern using the specified prefix and postfix.
-
-    Args:
-        prefix (str): Prefix of the pattern.
-        postfix (str): Postfix of the pattern.
-        reg (str): Regular expression pattern. Default is '.*'.
-
-    Returns:
-        str: Created regular expression pattern.
-    """
-    return prefix + reg + suffix
-
-
-@stub.function()
-def pattern_match(
-    prefix: str, suffix: str, string, reg: str = ".*", flag: int = 0
-) -> List[str]:
-    """
-    Perform pattern matching on the given string using the specified prefix and suffix.
-
-    Args:
-        prefix (str): Prefix of the pattern.
-        suffix (str): Postfix of the pattern.
-        string: String to perform pattern matching on.
-        reg (str): Regular expression pattern. Default is '.*'.
-        flag (int): Optional flag for pattern matching. Default is 0.
-
-    Returns:
-        List[str]: List of matched strings.
-    """
-    import re
-
-    prefix = prefix.replace("\\n", "\n")
-    suffix = suffix.replace("\\n", "\n")
-    results = []
-    for item in re.findall(
-        pattern=make_pattern(prefix, suffix, reg), string=string, flags=flag
-    ):
-        item = item[len(prefix) : len(item) - len(suffix)]
-        assert 0 < len(item)
-        results.append(item)
-    return results
+    scrape("Highlight")
+    scrape("Award Candidate")
 
 
 @stub.local_entrypoint()
-def main(config_file: str = "configs/defaults.toml"):
+def main(config_file: str = "configs/debug.toml"):
     """
     Main entry point of the script.
 
@@ -189,6 +97,4 @@ def main(config_file: str = "configs/defaults.toml"):
 
     config = dacite.from_dict(data_class=Config, data=toml.load(config_file))
     print(config)
-    papers = parse_html.call(config)
-    with open("data/tmp.json", "w", encoding="utf-8") as fw:
-        json.dump(papers, fw, indent=4, ensure_ascii=False)
+    scrape_award.call(config)

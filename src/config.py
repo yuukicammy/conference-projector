@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 
 
-def stab_dict_factory(items: list[tuple[str, str]]) -> dict[str, str]:
-    """dict_factory for stabs"""
+def stub_dict_factory(items: list[tuple[str, str]]) -> dict[str, str]:
+    """dict_factory for stubs"""
     adict = {}
     for key, value in items:
         adict[key] = value
@@ -16,13 +16,13 @@ def stab_dict_factory(items: list[tuple[str, str]]) -> dict[str, str]:
 
 @dataclass
 class ProjectConfig:
-    _name: str = "paper-viz"
-    _shared_vol: str = "paper-viz-vol"
+    _name: str = "cp-debug"
+    _shared_vol: str = f"{_name}-vol"
     _stub_embedding: str = f"{_name}-embedding"
     _stub_scraper: str = f"{_name}-scraper"
     _stub_html_parser: str = f"{_name}-html-parser"
-    _stab_paper_image: str = f"{_name}-extract-paper-image"
-    _stab_summary: str = f"{_name}-summary"
+    _stub_paper_image: str = f"{_name}-extract-paper-image"
+    _stub_summary: str = f"{_name}-summary"
     _stub_highlights: str = f"{_name}-highlights"
     _stub_pipeline: str = f"{_name}-pipeline"
     _stub_webapp: str = f"{_name}-webapp"
@@ -32,18 +32,20 @@ class ProjectConfig:
     stub_files: List[str] = field(default_factory=list)
     num_workers: int = 0
     max_papers: int = None
-    dataname: str = "cvpr2023"
+    dataname: str = ""
 
 
 @dataclass
 class PipelineConfig:
-    deplpoy_stubs: bool = True
+    deploy_stubs: bool = True
+    stop_stubs: bool = False
     download_data_locally: bool = True
     initialize_volume: bool = False
     run_embed: bool = True
     run_html_parse: bool = True
     run_paper_image: bool = True
     run_summarize: bool = True
+    run_highlight: bool = False
 
 
 @dataclass
@@ -79,6 +81,14 @@ class HTMLParserConfig:
     prefix_title: str = field(default_factory=str)
     prefix_arxiv: str = field(default_factory=str)
     suffix_arxiv: str = field(default_factory=str)
+
+
+@dataclass
+class HighlightingConfig:
+    award_details_url: str = ""
+    award: list = field(default_factory=list)
+    img_ignore_paths: list = field(default_factory=list)
+    img_base_url: str = ""
 
 
 @dataclass
@@ -165,6 +175,7 @@ class Config:
     summary: SummaryConfig
     webapp: WebAppConfig
     db: DBConfig
+    highlight: HighlightingConfig
 
     def __post_init__(self):
         self.files.json_path = f"{self.project.dataname}/{self.project.dataname}.json"
@@ -187,7 +198,7 @@ class Config:
 
         self.project.stub_names = []
         for key, value in vars(self.project).items():
-            if key.startswith("_stab"):
+            if key.startswith("_stub"):
                 self.project.stub_names.append(value)
 
     def embedding_path(self, label: str) -> str:
