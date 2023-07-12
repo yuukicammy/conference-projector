@@ -4,9 +4,9 @@ from typing import Dict, Any
 import modal
 from PIL import Image
 
-from .config import ProjectConfig, Config, DBConfig
+from .config import ProjectConfig, Config
 
-stub = modal.Stub(ProjectConfig._stab_paper_image)
+stub = modal.Stub(ProjectConfig._stub_paper_image)
 SHARED_ROOT = "/root/.cache"
 
 
@@ -138,8 +138,8 @@ def search_arxiv(title: str) -> str:
 
 @stub.function(
     timeout=36000,
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def extract_image(
@@ -174,8 +174,8 @@ def extract_image(
 
 @stub.function(
     image=modal.Image.debian_slim().pip_install("pymupdf", "Pillow", "requests"),
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
     retries=0,
     cpu=1,
@@ -260,8 +260,8 @@ def save_pdf_image(
     image=modal.Image.debian_slim()
     .apt_install("poppler-utils")
     .pip_install("pymupdf", "Pillow", "requests", "pdf2image", "arxiv"),
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
     retries=0,
     cpu=12,

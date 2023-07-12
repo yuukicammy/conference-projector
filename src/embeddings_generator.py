@@ -98,7 +98,7 @@ def save_embeddings(config: Config) -> None:
     import numpy as np
 
     papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
-        config.db
+        db_config=config.db, max_item_count=config.project.max_papers
     )
     papers = papers[: config.project.max_papers]
 
