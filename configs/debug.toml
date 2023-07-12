@@ -1,0 +1,177 @@
+config_version = "0.0.1"
+
+[project]
+dataname = "debug" 
+max_papers = 1000 # Negative values mean no limit.
+num_workers = 42 
+stub_files = ["src/embeddings_generator.py", "src/html_parser.py", "src/image_extractor.py", "src/summaries_generator.py", "src/scrape_highlights.py", "src/scraper.py", "src/cosmos.py"] 
+
+[pipeline]
+deploy_stubs = false
+stop_stubs=false
+download_data_locally = false
+initialize_volume = false
+run_html_parse = false
+run_summarize = false
+run_embed = false
+run_paper_image = false
+run_highlight = true
+
+[files]
+force_extract_image = false
+image_max_size = 1024
+image_name_width = 4
+json_indent = 4
+local_output_dir = "data"
+save_json = false
+
+[html_parser]
+base_url = "https://openaccess.thecvf.com/"
+path_papers = "CVPR2023?day=all"
+prefix_abst = '<div id="abstract">'
+prefix_arxiv = '<a href="http://arxiv.org/abs/'
+prefix_item = '<dt class="ptitle"><br><a href="/'
+prefix_pdf = '<meta name="citation_pdf_url" content="'
+prefix_title = '<div id="papertitle">'
+suffix_abst = '</div>\n    <font size="5">\n    <br><b>Related Material</b>'
+suffix_arxiv = '">arXiv</a>'
+suffix_item = '">'
+suffix_pdf = '">\n</head>'
+suffix_title = '\n    <dd>\n    </div>\n    <div id="authors">'
+
+[embedding]
+# see https://platform.openai.com/docs/guides/production-best-practices/improving-latencies
+batch_size = 20
+keys = ["title", "abstract", "category_en", "application_en"]
+model = "text-embedding-ada-002"
+retry = 5
+
+[summary]
+description = "Formatted summary of the paper."
+function_schema_file = "data/prompts/function_schema.json"
+model = "gpt-3.5-turbo-0613"
+prompt_file = "data/prompts/summary_prompt.txt"
+retry = 5
+sleep = 0.1
+
+[webapp]
+color_fig_title = "#43676b"
+color_not_selectd = "#c099a0"
+color_selected = "#895b8a"
+
+init_cache = false
+margine_default = "10px"
+margine_title_bottom = "20px"
+node_size_default = 8
+node_symbol_clicked = "star"
+node_symbol_default = "circle"
+node_symbol_selected = "diamond"
+num_colors = 2000
+num_neighborhoods = 22
+
+max_chars_long = 60
+max_chars_short = 30
+max_hight = "800px"
+
+num_text_nodes = 10
+size_code = 12
+size_default = 12
+size_title = 20
+
+size_fig_title_large = 20
+size_fig_title_small = 16
+
+text_concern_description = "From what perspective do you search for papers?"
+text_details_default = "Click a node for paper information."
+text_figure_title_format = "{} Projection: CVPR 2023"
+text_recommendation_description = "Recommendations"
+text_selection_description = "Your Selection"
+text_top_description = "Clicking on a node will display information about that paper and papers close to it."
+
+title = "Conference Projector: CVPR 2023"
+title_url = "https://yuukicammy--paper-viz-webapp-wrapper.modal.run" # "https://yuukicammy--conference-projector-wrapper.modal.run"
+
+label_dimension = "Dimension"
+label_distance = "Distance"
+label_embeddings = "Concern"
+label_options = "Options"
+label_projection_algorithm = "Projection Algorithm"
+
+width_details = "60%"
+width_figure = "40%"
+
+web_description = "See the Big Picture and Find Papers Accepted in the International Conference powered by OpenAI"
+web_icon = "https://drive.google.com/uc?export=download&id=1WYCjr3Rxi9Q-2INWPchdMmumsEdtCvHg"
+web_title = "Conference Projector"
+
+
+[[webapp.embedding_options]]
+label = "Category"
+value = "category_en"
+
+[[webapp.embedding_options]]
+label = "Application"
+value = "application_en"
+
+[[webapp.embedding_options]]
+label = "Title"
+value = "title"
+
+[[webapp.embedding_options]]
+label = "Abstract"
+value = "abstract"
+
+[[webapp.dimension_options]]
+label = "2D"
+value = 2
+
+[[webapp.dimension_options]]
+label = "3D"
+value = 3
+
+[[webapp.dimension_reduction_options]]
+label = "PCA"
+value = "pca"
+
+[[webapp.dimension_reduction_options]]
+label = "UMAP"
+value = "umap"
+
+[[webapp.dimension_reduction_options]]
+label = "t-SNE"
+value = "tsne"
+
+[db]
+container_id = "Container-01"
+database_id = "test"
+uri = "https://papers-projector.documents.azure.com:443/"
+
+[highlight]
+award_details_url = "https://cvpr2023.thecvf.com/virtual/2023/awards_detail"
+img_base_url="https://cvpr2023.thecvf.com/"
+img_ignore_paths=["/static/core/img/CVPR-logo.svg"]
+
+[[highlight.award]]
+label = "Best Paper"
+values = [
+    "Visual Programming: Compositional visual reasoning without training",
+    "Planning-oriented Autonomous Driving"
+]
+
+[[highlight.award]]
+label = "Honorable Mention"
+values = [
+    "DynIBaR: Neural Dynamic Image-Based Rendering"
+]
+
+[[highlight.award]]
+label = "Best Student Paper"
+values = [
+    "3D Registration with Maximal Cliques"
+]
+
+[[highlight.award]]
+label = "Honorable Mention (Student)"
+values = [
+    "DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation"
+]
