@@ -15,9 +15,10 @@ SHARED_ROOT = "/root/.cache"
 
 @stub.function(
     image=modal.Image.debian_slim(),
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume().persist(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
+    timeout=3600,
     retries=0,
     cpu=1,
 )
@@ -41,14 +42,18 @@ def parse_html(config: Config) -> List[Dict[str, Any]]:
         modal.Function.lookup(ProjectConfig._stub_scraper, "pattern_match").call(
             config.html_parser.prefix_item,
             config.html_parser.suffix_item,
-            get_html(config.html_parser.base_url + config.html_parser.path_papers),
+            modal.Function.lookup(ProjectConfig._stub_scraper, "get_html").call(
+                config.html_parser.base_url + config.html_parser.path_papers
+            ),
         )
     ):
         if config.project.max_papers <= len(papers):
             break
         paper_url = config.html_parser.base_url + path
         print(f"request url: {paper_url}")
-        paper_html = get_html(url=paper_url)
+        paper_html = modal.Function.lookup(
+            ProjectConfig._stub_scraper, "get_html"
+        ).call(url=paper_url)
 
         # find title
         title = modal.Function.lookup(
@@ -108,9 +113,10 @@ def parse_html(config: Config) -> List[Dict[str, Any]]:
         }
         papers.append(paper)
         paper["id"] = str(idx)
-        modal.Function.lookup(config.project._stub_db, "upsert_item").call(
-            config.db, paper
+        res = modal.Function.lookup(config.project._stub_db, "upsert_item").call(
+            db_config=config.db, item=paper
         )
+        assert 6 < len(res.keys())
 
     if config.files.save_json:
         json_path = Path(SHARED_ROOT) / config.files.json_file
@@ -119,39 +125,6 @@ def parse_html(config: Config) -> List[Dict[str, Any]]:
             print(f"Saved a json file: {json_path}")
 
     return papers
-
-
-@stub.function()
-def get_html(url: str) -> str:
-    """
-    Get the HTML content from the specified URL.
-
-    Args:
-        url (str): URL of the website.
-
-    Returns:
-        str: HTML content as a string.
-    """
-    import urllib
-
-    response = urllib.request.urlopen(url=url)
-    return response.read().decode()  # utf-8
-
-
-@stub.function()
-def make_pattern(prefix: str, suffix: str, reg: str = ".*") -> str:
-    """
-    Create a regular expressionpattern using the specified prefix and postfix.
-
-    Args:
-        prefix (str): Prefix of the pattern.
-        postfix (str): Postfix of the pattern.
-        reg (str): Regular expression pattern. Default is '.*'.
-
-    Returns:
-        str: Created regular expression pattern.
-    """
-    return prefix + reg + suffix
 
 
 @stub.local_entrypoint()
