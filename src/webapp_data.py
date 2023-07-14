@@ -103,7 +103,6 @@ class WebappData:
             self.df = pickle.load(f)
             if self.config.project.max_papers < len(self.df):
                 self.df = self.df.head(self.config.project.max_papers)
-        self.df["text"] = self.df["award"]
 
     def update_center(
         self, index: int, distances: List[float], indices: List[int]
@@ -112,7 +111,7 @@ class WebappData:
         self.df[self.config.webapp.label_distance] = [
             max_dist * 1.1
         ] * self.container_data.num_data
-        self.df[index, "text"] = self.df["award"]
+
         for i in range(len(indices)):
             dist = distances[i]
             idx = indices[i]
@@ -120,19 +119,19 @@ class WebappData:
             if i < self.config.webapp.num_text_nodes:
                 if i == 0:
                     if (
-                        self.df.at[idx, "text"] is None
-                        or len(self.df.at[idx, "text"]) == 0
+                        self.df.at[idx, "award"] is None
+                        or len(self.df.at[idx, "award"]) == 0
                     ):
                         self.df.at[idx, "text"] = "👇"
                     else:
-                        self.df.at[idx, "text"] = self.df.at[idx, "text"] + "<br>👇"
+                        self.df.at[idx, "text"] = self.df.at[idx, "award"] + "<br>👇"
                 else:
                     if (
-                        self.df.at[idx, "text"] is None
-                        or len(self.df.at[idx, "text"]) == 0
+                        self.df.at[idx, "award"] is None
+                        or len(self.df.at[idx, "award"]) == 0
                     ):
                         self.df.at[idx, "text"] = str(i)
                     else:
                         self.df.at[idx, "text"] = (
-                            self.df.at[idx, "text"] + "<br>" + str(i)
+                            self.df.at[idx, "award"] + "<br>" + str(i)
                         )
