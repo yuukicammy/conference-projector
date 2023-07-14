@@ -10,7 +10,7 @@ import modal
 
 from .config import ProjectConfig, Config
 
-stub = modal.Stub(ProjectConfig._stab_summary)
+stub = modal.Stub(ProjectConfig._stub_summary)
 SHARED_ROOT = "/root/.cache"
 
 
@@ -122,8 +122,9 @@ def generate_summaries(config: Config) -> None:
         None
     """
     import time
-    papers = modal.Function.lookup(config.project._stab_db, "get_all_papers").call(
-        config.db
+
+    papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
+        db_config=config.db, max_item_count=config.project.max_papers
     )
     for idx, paper in enumerate(papers):
         retry = config.summary.retry
@@ -164,7 +165,7 @@ def generate_summaries(config: Config) -> None:
                 time_end = time.perf_counter()
                 print(f"chat request: {time_end- time_sta}")
                 time_sta = time.perf_counter()
-                modal.Function.lookup(config.project._stab_db, "upsert_item").call(
+                modal.Function.lookup(config.project._stub_db, "upsert_item").call(
                     config.db, paper
                 )
                 time_end = time.perf_counter()
