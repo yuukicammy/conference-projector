@@ -27,12 +27,22 @@ def run_pipeline(config: Config):
                     continue  # skip this stub
                 subprocess.run(["modal", "deploy", f"{name}"])
 
-        # Parsing a website with a list of papers and creating a metadata file of papers.
-        if config.pipeline.run_html_parse:
-            print("Parsing a website with a list of papers...")
-            modal.Function.lookup(config.project._stub_html_parser, "parse_html").call(
-                config=config
-            )
+        # Scraping a website to extract paper titles and related information.
+        if config.pipeline.run_scrape:
+            print("Scraping a website...")
+            modal.Function.lookup(
+                config.project._stub_scraper, "extract_papers_from_web"
+            ).call(config=config)
+
+            print("Scraping Highlight and Award Candidate titles from a website...")
+            modal.Function.lookup(
+                config.project._stub_scraper, "extract_awards_from_web"
+            ).call(config=config)
+
+            print("Reflecting award titles from config...")
+            modal.Function.lookup(
+                config.project._stub_scraper, "extract_awards_from_config"
+            ).call(config=config)
 
         # Generate summaries
         if config.pipeline.run_summarize:
@@ -53,18 +63,6 @@ def run_pipeline(config: Config):
             print("Extracting images that are representative of papers...")
             modal.Function.lookup(
                 config.project._stub_paper_image, "extract_representative_images"
-            ).call(
-                config=config,
-            )
-
-        # Extract high-impact papers
-        if config.pipeline.run_highlight:
-            print("Extracting award information...")
-            modal.Function.lookup(config.project._stub_highlights, "scrape_award").call(
-                config=config,
-            )
-            modal.Function.lookup(
-                config.project._stub_highlights, "award_from_config"
             ).call(
                 config=config,
             )

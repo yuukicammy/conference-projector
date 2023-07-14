@@ -60,9 +60,7 @@ class CVPRScraper(Scraper):
         from urllib.parse import urljoin
 
         html = self.get_html(
-            url=urljoin(
-                self.config.html_parser.base_url, self.config.html_parser.path_papers
-            )
+            url=urljoin(self.config.scraper.base_url, self.config.scraper.path_papers)
         )
         soup = BeautifulSoup(html, "html.parser")
 
@@ -86,14 +84,14 @@ class CVPRScraper(Scraper):
 
             # Abstract
             paper_html = self.get_html(
-                url=urljoin(self.config.html_parser.base_url, title_path)
+                url=urljoin(self.config.scraper.base_url, title_path)
             )
             paper_soup = BeautifulSoup(paper_html, "html.parser")
             abstract = paper_soup.select_one("#abstract").text.strip()
 
             paper = {
-                "url": urljoin(self.config.html_parser.base_url, title_path),
-                "pdf_url": urljoin(self.config.html_parser.base_url, pdf_path),
+                "url": urljoin(self.config.scraper.base_url, title_path),
+                "pdf_url": urljoin(self.config.scraper.base_url, pdf_path),
                 "arxiv_id": arxiv_id,
                 "title": title,
                 "abstract": abstract,

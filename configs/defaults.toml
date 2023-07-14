@@ -4,14 +4,13 @@ config_version = "0.0.1"
 dataname = "cvpr2023" 
 max_papers = -1 # Negative values mean no limit.
 num_workers = 42 
-stab_files = ["src/embeddings_generator.py", "src/html_parser.py", "src/paperimages.py", "src/summaries_generator.py"] 
+stab_files = ["src/embeddings_generator.py", "src/paperimages.py", "src/summaries_generator.py"] 
 
 [pipeline]
 deplpoy_stubs = true
 download_data_locally = false
 initialize_volume = false
 run_embed = false
-run_html_parse = false
 run_paper_image = false
 run_summarize = true
 
@@ -23,19 +22,38 @@ json_indent = 4
 local_output_dir = "data"
 save_json = false
 
-[html_parser]
+[scraper]
 base_url = "https://openaccess.thecvf.com/"
 path_papers = "CVPR2023?day=all"
-prefix_abst = '<div id="abstract">'
-prefix_arxiv = '<a href="http://arxiv.org/abs/'
-prefix_item = '<dt class="ptitle"><br><a href="/'
-prefix_pdf = '<meta name="citation_pdf_url" content="'
-prefix_title = '<div id="papertitle">'
-suffix_abst = '</div>\n    <font size="5">\n    <br><b>Related Material</b>'
-suffix_arxiv = '">arXiv</a>'
-suffix_item = '">'
-suffix_pdf = '">\n</head>'
-suffix_title = '\n    <dd>\n    </div>\n    <div id="authors">'
+award_details_url = "https://cvpr2023.thecvf.com/virtual/2023/awards_detail"
+img_base_url="https://cvpr2023.thecvf.com/"
+img_ignore_paths=["/static/core/img/CVPR-logo.svg"]
+
+[[scraper.award]]
+label = "Best Paper"
+values = [
+    "Visual Programming: Compositional visual reasoning without training",
+    "Planning-oriented Autonomous Driving"
+]
+
+[[scraper.award]]
+label = "Honorable Mention"
+values = [
+    "DynIBaR: Neural Dynamic Image-Based Rendering"
+]
+
+[[scraper.award]]
+label = "Best Student Paper"
+values = [
+    "3D Registration with Maximal Cliques"
+]
+
+[[scraper.award]]
+label = "Honorable Mention (Student)"
+values = [
+    "DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation"
+]
+
 
 [embedding]
 # see https://platform.openai.com/docs/guides/production-best-practices/improving-latencies
@@ -144,32 +162,3 @@ container_id = "Container-01"
 database_id = "cvpr2023"
 uri = "https://papers-projector.documents.azure.com:443/"
 
-[highlight]
-award_details_url = "https://cvpr2023.thecvf.com/virtual/2023/awards_detail"
-img_base_url="https://cvpr2023.thecvf.com/"
-img_ignore_paths=["/static/core/img/CVPR-logo.svg"]
-
-[[highlight.award]]
-label = "Best Paper"
-values = [
-    "Visual Programming: Compositional visual reasoning without training",
-    "Planning-oriented Autonomous Driving"
-]
-
-[[highlight.award]]
-label = "Honorable Mention"
-values = [
-    "DynIBaR: Neural Dynamic Image-Based Rendering"
-]
-
-[[highlight.award]]
-label = "Best Student Paper"
-values = [
-    "3D Registration with Maximal Cliques"
-]
-
-[[highlight.award]]
-label = "Honorable Mention (Student)"
-values = [
-    "DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation"
-]

@@ -16,11 +16,10 @@ def stub_dict_factory(items: list[tuple[str, str]]) -> dict[str, str]:
 
 @dataclass
 class ProjectConfig:
-    _name: str = "cp-debug"
+    _name: str = "cp-stg"
     _shared_vol: str = f"{_name}-vol"
     _stub_embedding: str = f"{_name}-embedding"
     _stub_scraper: str = f"{_name}-scraper"
-    _stub_html_parser: str = f"{_name}-html-parser"
     _stub_paper_image: str = f"{_name}-extract-paper-image"
     _stub_summary: str = f"{_name}-summary"
     _stub_highlights: str = f"{_name}-highlights"
@@ -44,10 +43,9 @@ class PipelineConfig:
     download_data_locally: bool = True
     initialize_volume: bool = False
     run_embed: bool = True
-    run_html_parse: bool = True
+    run_scrape: bool = True
     run_paper_image: bool = True
     run_summarize: bool = True
-    run_highlight: bool = False
 
 
 @dataclass
@@ -56,37 +54,24 @@ class MedatadaFileConfig:
     json_file: str = ""
     save_json: bool = False
     json_indent: int = 4
-    tsv_file: str = "test.tsv"
     embeddings_files: Dict[str, str] = field(default_factory=dict)
+
+    image_name_width: int = 4
+    image_max_size: int = 1000
+    force_extract_image: bool = False
 
     # The following file paths are defined in __post_init__()
     reduced_feature_file: str = ""
     papers_file: str = ""
     data_frame_file: str = ""
 
-    image_name_width: int = 4
-    image_max_size: int = 1000
-    force_extract_image: bool = False
-
 
 @dataclass
-class HTMLParserConfig:
+class ScraperConfig:
     base_url: str = field(default_factory=str)
     path_papers: str = field(default_factory=str)
-    suffix_abst: str = field(default_factory=str)
-    suffix_item: str = field(default_factory=str)
-    suffix_pdf: str = field(default_factory=str)
-    suffix_title: str = field(default_factory=str)
-    prefix_abst: str = field(default_factory=str)
-    prefix_item: str = field(default_factory=str)
-    prefix_pdf: str = field(default_factory=str)
-    prefix_title: str = field(default_factory=str)
-    prefix_arxiv: str = field(default_factory=str)
-    suffix_arxiv: str = field(default_factory=str)
 
-
-@dataclass
-class HighlightingConfig:
+    # For award/highlight papers
     award_details_url: str = ""
     award: list = field(default_factory=list)
     img_ignore_paths: list = field(default_factory=list)
@@ -185,16 +170,14 @@ class DBConfig:
 class Config:
     project: ProjectConfig
     pipeline: PipelineConfig
+    scraper: ScraperConfig
     files: MedatadaFileConfig
-    html_parser: HTMLParserConfig
     embedding: EmbeddingConfig
     summary: SummaryConfig
     webapp: WebAppConfig
     db: DBConfig
-    highlight: HighlightingConfig
 
     def __post_init__(self):
-        self.files.json_path = f"{self.project.dataname}/{self.project.dataname}.json"
         if self.project.max_papers < 0:
             self.project.max_papers = 2**31 - 1
         with open(self.summary.prompt_file, "r", encoding="utf-8") as f:
