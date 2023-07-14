@@ -16,7 +16,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    environment: ${{ MODAL_TOKEN_ID }}
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.10
@@ -36,4 +35,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with unittest
       run: |
-        modal run tests/test_main.py --token-id ${{ vars.MODAL_TOKEN_ID }} --token-secret ${{ vars.MODAL_TOKEN_SECRET }}
+        modal run tests/test_main.py --token-id ${{ env.MODAL_TOKEN_ID }} --token-secret ${{ env.MODAL_TOKEN_SECRET }}
