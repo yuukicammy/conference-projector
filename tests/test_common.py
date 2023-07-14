@@ -31,6 +31,7 @@ modal_image = modal.Image.debian_slim().pip_install(
     "pdf2image",
     "arxiv",
     "openai",
+    "beautifulsoup4",
 )
 
 SHARED_ROOT = "/root/.cache"
@@ -63,16 +64,20 @@ stub = modal.Stub(
 )
 
 if stub.is_inside():
+    import os
     import dacite
     import toml
     import azure
+    import azure.cosmos.cosmos_client as cosmos_client
+    import azure.cosmos.exceptions as exceptions
+    from azure.cosmos.partition_key import PartitionKey
 
 
 class CPTestCase(unittest.TestCase):
     html_doc = "<a>test1</a>\n  <b>test2</b>"
     config = dacite.from_dict(data_class=Config, data=toml.load("configs/test.toml"))
     with open(Path(__file__).parent / "test.json", "r", encoding="utf-8") as f:
-        except_papers = json.load(f)
+        expected_papers = json.load(f)
 
 
 @stub.function(cpu=12)

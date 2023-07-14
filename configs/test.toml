@@ -2,26 +2,31 @@ config_version = "0.0.1"
 
 [project]
 dataname = "test" 
-max_papers = 3 # minus value means no limits.
-num_workers = 1 
-stab_files = ["src/embeddings_generator.py", "src/html_parser.py", "src/paperimages.py", "src/summaries_generator.py"] 
+max_papers = 3 # Negative values mean no limit.
+num_workers = 2
+stub_files = ["src/embeddings_generator.py", "src/html_parser.py", "src/image_extractor.py", "src/summaries_generator.py", "src/scrape_highlights.py", "src/scraper.py", "src/cosmos.py"] 
+config_file="configs/debug.toml"
 
 [pipeline]
-deplpoy_stubs = true
-download_data_locally = true
-initialize_volume = true
-run_embed = true
-run_html_parse = true
-run_paper_image = true
-run_summarize = true
+deploy_stubs = true # except for pipline and webapp
+deploy_webapp = "src/webapp.py" # If deploy a webapp, specify the file name, otherwise "".
+stop_stubs=true
+download_data_locally = false
+initialize_volume = false
+run_html_parse = false
+run_summarize = false
+run_embed = false
+run_paper_image = false
+run_highlight = true
 
 [files]
-force_extract_image = true
-image_max_size = 400
+force_extract_image = false
+image_max_size = 1024
 image_name_width = 4
 json_indent = 4
-local_output_dir = "test/data"
-save_json = false
+local_output_dir = "data"
+save_json = true
+json_file  = "debug.json"
 
 [html_parser]
 base_url = "https://openaccess.thecvf.com/"
@@ -39,7 +44,7 @@ suffix_title = '\n    <dd>\n    </div>\n    <div id="authors">'
 
 [embedding]
 # see https://platform.openai.com/docs/guides/production-best-practices/improving-latencies
-batch_size = 1
+batch_size = 20
 keys = ["title", "abstract", "category_en", "application_en"]
 model = "text-embedding-ada-002"
 retry = 5
@@ -53,8 +58,12 @@ retry = 5
 sleep = 0.1
 
 [webapp]
+color_fig_title = "#43676b"
 color_not_selectd = "#c099a0"
 color_selected = "#895b8a"
+
+init_trees = false
+init_papers = false
 margine_default = "10px"
 margine_title_bottom = "20px"
 node_size_default = 8
@@ -62,23 +71,43 @@ node_symbol_clicked = "star"
 node_symbol_default = "circle"
 node_symbol_selected = "diamond"
 num_colors = 2000
-num_neighborhoods = 10
+num_neighborhoods = 22
+
+max_chars_long = 60
+max_chars_short = 30
+max_hight = "800px"
+
+num_text_nodes = 10
 size_code = 12
 size_default = 12
 size_title = 20
 
+size_fig_title_large = 20
+size_fig_title_small = 16
+
 text_concern_description = "From what perspective do you search for papers?"
 text_details_default = "Click a node for paper information."
+text_figure_title_format = "{} Projection: CVPR 2023"
+text_recommendation_description = "Recommendations"
+text_selection_description = "Your Selection"
 text_top_description = "Clicking on a node will display information about that paper and papers close to it."
 
 title = "Conference Projector: CVPR 2023"
+title_url = "https://yuukicammy--paper-viz-webapp-wrapper.modal.run" # "https://yuukicammy--conference-projector-wrapper.modal.run"
 
 label_dimension = "Dimension"
 label_distance = "Distance"
-label_embeddings = "Perspective"
+label_embeddings = "Concern"
 label_options = "Options"
-label_paper_details = "Your Selection and Recommendations"
 label_projection_algorithm = "Projection Algorithm"
+
+width_details = "60%"
+width_figure = "40%"
+
+web_description = "See the Big Picture and Find Papers Accepted in the International Conference powered by OpenAI"
+web_icon = "https://drive.google.com/uc?export=download&id=1WYCjr3Rxi9Q-2INWPchdMmumsEdtCvHg"
+web_title = "Conference Projector"
+
 
 [[webapp.embedding_options]]
 label = "Category"
@@ -118,5 +147,37 @@ value = "tsne"
 
 [db]
 container_id = "Container-01"
-database_id = "test"
+database_id = "debug"
 uri = "https://papers-projector.documents.azure.com:443/"
+
+[highlight]
+award_details_url = "https://cvpr2023.thecvf.com/virtual/2023/awards_detail"
+img_base_url="https://cvpr2023.thecvf.com/"
+img_ignore_paths=["/static/core/img/CVPR-logo.svg"]
+
+[[highlight.award]]
+label = "Best Paper"
+values = [
+    "Visual Programming: Compositional Visual Reasoning Without Training",
+    "Planning-Oriented Autonomous Driving"
+]
+
+[[highlight.award]]
+label = "Honorable Mention"
+values = [
+    "DynIBaR: Neural Dynamic Image-Based Rendering"
+]
+
+[[highlight.award]]
+label = "Best Student Paper"
+values = [
+    "3D Registration with Maximal Cliques"
+]
+
+[[highlight.award]]
+label = "Honorable Mention (Student)"
+values = [
+    "DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation"
+]
+
+
