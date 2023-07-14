@@ -3,9 +3,9 @@ config_version = "0.0.1"
 [project]
 dataname = "test" 
 max_papers = 3 # Negative values mean no limit.
-num_workers = 2
+num_workers = 2 
 stub_files = ["src/embeddings_generator.py", "src/image_extractor.py", "src/summaries_generator.py", "src/scraper.py", "src/cosmos.py"] 
-config_file="configs/debug.toml"
+config_file="configs/test.toml"
 
 [pipeline]
 deploy_stubs = true # except for pipline and webapp
@@ -25,7 +25,7 @@ image_name_width = 4
 json_indent = 4
 local_output_dir = "data"
 save_json = true
-json_file  = "debug.json"
+json_file  = "test.json"
 
 [scraper]
 base_url = "https://openaccess.thecvf.com/"
@@ -58,6 +58,7 @@ label = "Honorable Mention (Student)"
 values = [
     "DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation"
 ]
+
 
 
 

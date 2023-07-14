@@ -4,15 +4,19 @@ config_version = "0.0.1"
 dataname = "cvpr2023" 
 max_papers = -1 # Negative values mean no limit.
 num_workers = 42 
-stab_files = ["src/embeddings_generator.py", "src/paperimages.py", "src/summaries_generator.py"] 
+stub_files = ["src/embeddings_generator.py", "src/image_extractor.py", "src/summaries_generator.py", "src/scraper.py", "src/cosmos.py"] 
+config_file="configs/defaults.toml"
 
 [pipeline]
-deplpoy_stubs = true
+deploy_stubs = true # except for pipline and webapp
+deploy_webapp = "src/webapp.py" # If deploy a webapp, specify the file name, otherwise "".
+stop_stubs=true
 download_data_locally = false
 initialize_volume = false
+run_scrape = true
+run_summarize = false
 run_embed = false
 run_paper_image = false
-run_summarize = true
 
 [files]
 force_extract_image = false
@@ -20,7 +24,8 @@ image_max_size = 1024
 image_name_width = 4
 json_indent = 4
 local_output_dir = "data"
-save_json = false
+save_json = true
+json_file  = "debug.json"
 
 [scraper]
 base_url = "https://openaccess.thecvf.com/"
@@ -32,8 +37,8 @@ img_ignore_paths=["/static/core/img/CVPR-logo.svg"]
 [[scraper.award]]
 label = "Best Paper"
 values = [
-    "Visual Programming: Compositional visual reasoning without training",
-    "Planning-oriented Autonomous Driving"
+    "Visual Programming: Compositional Visual Reasoning Without Training",
+    "Planning-Oriented Autonomous Driving"
 ]
 
 [[scraper.award]]
@@ -53,6 +58,9 @@ label = "Honorable Mention (Student)"
 values = [
     "DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation"
 ]
+
+
+
 
 
 [embedding]
@@ -75,7 +83,8 @@ color_fig_title = "#43676b"
 color_not_selectd = "#c099a0"
 color_selected = "#895b8a"
 
-init_cache = false
+init_trees = false
+init_papers = false
 margine_default = "10px"
 margine_title_bottom = "20px"
 node_size_default = 8
