@@ -213,7 +213,7 @@ class Layout:
             font=dict(
                 # family="Courier New, monospace",
                 size=12,  # Set the font size here
-                color="gray",
+                color="#43676b",
             ),
             annotations=[
                 dict(
@@ -302,6 +302,11 @@ class Layout:
         fig.update_layout(
             overwrite=True,
             showlegend=False,
+            font=dict(
+                # family="Courier New, monospace",
+                size=12,  # Set the font size here
+                color="#43676b",
+            ),
             annotations=[
                 dict(
                     text=info,
