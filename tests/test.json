@@ -17,7 +17,8 @@
         "essence_ja": "GFPoseの中核には、時間依存のスコアネットワークがあり、各ボディジョイントの勾配を推定し、摂動を受けた3D人物姿勢を進行的にノイズ除去して、与えられたタスク仕様に一致させます。ノイズ除去の過程で、GFPoseは勾配に姿勢の事前知識を暗黙的に組み込み、優れたフレームワークでさまざまな識別的および生成的タスクを統一します。",
         "results_ja": "私たちの実験は次のように示しています。1）多重仮説姿勢推定器として、GFPoseはHuman3.6Mデータセットで既存のSOTAを20％上回ります。2）単一仮説姿勢推定器として、GFPoseはバニラバックボーンでも決定論的なSOTAと比較可能な結果を達成します。3）GFPoseは、姿勢のノイズ除去、補完、生成タスクで多様で現実的なサンプルを生成することができます。",
         "category_ja": "3D人物姿勢推定",
-        "application_ja": "人間中心のAI"
+        "application_ja": "人間中心のAI",
+        "award": ""
     },
     {
         "url": "https://openaccess.thecvf.com/content/CVPR2023/html/Xu_CXTrack_Improving_3D_Point_Cloud_Tracking_With_Contextual_Information_CVPR_2023_paper.html",
@@ -37,7 +38,8 @@
         "essence_ja": "CXTrackのキーポイントは、3Dオブジェクトトラッキングにおけるコンテキスト情報の活用です。ターゲット中心のトランスフォーマーネットワークを使用してコンテキスト情報を探索し、ターゲットの手がかりを暗黙的に伝播させます。さらに、オブジェクトの正確な位置特定のために、トランスフォーマーベースの位置特定ヘッドとセンター埋め込みモジュールを使用します。",
         "results_ja": "KITTI、nuScenes、Waymo Open Datasetの3つの大規模データセットでの詳細な実験結果は、CXTrackが34FPSで動作しながら最先端のトラッキング性能を達成していることを示しています。",
         "category_ja": "3D物体追跡",
-        "application_ja": "自動運転"
+        "application_ja": "自動運転",
+        "award": ""
     },
     {
         "url": "https://openaccess.thecvf.com/content/CVPR2023/html/Lin_Deep_Frequency_Filtering_for_Domain_Generalization_CVPR_2023_paper.html",
@@ -57,6 +59,7 @@
         "essence_ja": "提案手法のキーポイントは、トレーニング中に異なるドメイン間での転送難易度の周波数成分を潜在空間で調整するDeep Frequency Filtering（DFF）テクニックです。DFFは、特徴マップに対して高速フーリエ変換（FFT）を実行し、周波数表現から注意マスクを学習して、転送可能な成分を強化し、汎化に適さない成分を抑制します。",
         "results_ja": "大規模な実験により、提案されたDeep Frequency Filtering（DFF）手法が、クローズセット分類やオープンセット検索などの異なるドメイン汎化タスクで最先端の手法を上回ることが示されました。DFFの効果は、Deep Neural Networks（DNN）の汎化能力の向上と学習された特徴の堅牢性の向上を実証しています。",
         "category_ja": "ドメイン汎化",
-        "application_ja": "画像分類、物体検出、セマンティックセグメンテーションなど、さまざまなコンピュータビジョンタスクにおけるDeep Neural Networks（DNN）の汎化能力の向上"
+        "application_ja": "画像分類、物体検出、セマンティックセグメンテーションなど、さまざまなコンピュータビジョンタスクにおけるDeep Neural Networks（DNN）の汎化能力の向上",
+        "award": ""
     }
 ]
