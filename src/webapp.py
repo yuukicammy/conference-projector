@@ -19,15 +19,17 @@ modal_image = (
     modal.Image.debian_slim(force_build=False)
     .apt_install("git")
     .pip_install(
-        ["flask",
-        "dacite",
-        "dash",
-        "toml",
-        "dash-bootstrap-components",
-        "scipy",
-        "scikit-learn",
-        "umap-learn",
-        "seaborn",]
+        [
+            "flask",
+            "dacite",
+            "dash",
+            "toml",
+            "dash-bootstrap-components",
+            "scipy",
+            "scikit-learn",
+            "umap-learn",
+            "seaborn",
+        ]
     )
     .run_function(
         build_modal_image,
@@ -42,15 +44,15 @@ modal_image = (
                 Path(__file__).parent.parent / "configs", remote_path="/root/configs"
             ),
             modal.Mount.from_local_dir(
-                Path(__file__).parent.parent / "data/prompts", remote_path="/root/data/prompts"
-            )
+                Path(__file__).parent.parent / "data/prompts",
+                remote_path="/root/data/prompts",
+            ),
         ],
     )
 )
 
 stub = modal.Stub(
-    # ProjectConfig._stab_webapp,
-    PROD_STUB_NAME,
+    ProjectConfig._stub_webapp,
     image=modal_image,
     mounts=[
         modal.Mount.from_local_dir(
@@ -60,8 +62,9 @@ stub = modal.Stub(
             Path(__file__).parent.parent / "assets", remote_path="/root/src/assets"
         ),
         modal.Mount.from_local_dir(
-                Path(__file__).parent.parent / "data/prompts", remote_path="/root/data/prompts"
-        )
+            Path(__file__).parent.parent / "data/prompts",
+            remote_path="/root/data/prompts",
+        ),
     ],
 )
 
@@ -69,17 +72,17 @@ stub.cache = modal.Dict.new()
 
 if stub.is_inside():
     from typing import Dict, Any, List, Tuple
+    import dacite
+    import toml
     import numpy as np
-    
     import dash
     from dash import dcc
     from dash import html
     import dash_bootstrap_components as dbc
+    from dash.dependencies import Input, Output, State
     import pandas as pd
     import plotly
     import plotly.express as px
-    from dash.dependencies import Input, Output, State
-        
 
 
 @stub.cls(
@@ -87,16 +90,14 @@ if stub.is_inside():
         SHARED_ROOT: modal.NetworkFileSystem.persisted(ProjectConfig._shared_vol)
     },
 )
-class DashApp: 
-    def __init__(self):
-        import dacite
-        import toml
-
-        self.config = dacite.from_dict(data_class=Config, data=toml.load(CONFIG_FILE))
-
+class DashApp:
+    def __init__(self, config: Config):
+        self.config = config
         self.container_data = ContainerData(config=self.config)
         self.layout = Layout(config=self.config, container_data=self.container_data)
-        self.app_data = WebappData(config=self.config, container_data=self.container_data)
+        self.app_data = WebappData(
+            config=self.config, container_data=self.container_data
+        )
 
         app_description = self.config.webapp.web_description
         app_title = self.config.webapp.web_title
@@ -115,22 +116,21 @@ class DashApp:
             {"property": "og:image", "content": app_image},
         ]
 
-
         self.app = dash.Dash(
-                __name__,
-                meta_tags=metas,
-                title=app_title,
-                external_stylesheets=[
-                    dbc.icons.FONT_AWESOME,
-                    "https://codepen.io/chriddyp/pen/bWLwgP.css",
-                    "/root/assets/style.css",
-                    dbc.themes.BOOTSTRAP,
-                ],
-                # comment two following lines for local tests
-                routes_pathname_prefix="/",
-                requests_pathname_prefix="/",
-                serve_locally=False,
-            )
+            __name__,
+            meta_tags=metas,
+            title=app_title,
+            external_stylesheets=[
+                dbc.icons.FONT_AWESOME,
+                "https://codepen.io/chriddyp/pen/bWLwgP.css",
+                "/root/assets/style.css",
+                dbc.themes.BOOTSTRAP,
+            ],
+            # comment two following lines for local tests
+            routes_pathname_prefix="/",
+            requests_pathname_prefix="/",
+            serve_locally=False,
+        )
         self.app.layout = self.get_layout()
 
         # Update the figure and the entire screen.
@@ -151,10 +151,14 @@ class DashApp:
                 Input("dimensions", "value"),
                 Input("viewall-nclicks", "n_clicks"),
             ],
-            [State("url", "search"), State("shared-data", "data"), State("url", "pathname")],
+            [
+                State("url", "search"),
+                State("shared-data", "data"),
+                State("url", "pathname"),
+            ],
         )(self.update)
-        
-        # Updated paper description 
+
+        # Updated paper description
         self.app.callback(
             [Output("recommendation", "children"), Output("shared-data", "data")],
             [Input("details-option", "value")],
@@ -164,7 +168,7 @@ class DashApp:
     @modal.method()
     def get_server(self):
         return self.app.server
-        
+
     @modal.method()
     def get_layout(self) -> html.Div:
         return self.layout.screen_layout
@@ -172,6 +176,7 @@ class DashApp:
     @modal.method()
     def k_nearest(self, index: int, feature_name: str) -> Tuple[List[float], List[int]]:
         from scipy.spatial import cKDTree
+
         if stub.app.cache.contains(
             f"indices-{str(index)}-{feature_name}"
         ) and stub.app.cache.contains(f"distances-{str(index)}-{feature_name}"):
@@ -186,7 +191,7 @@ class DashApp:
             stub.app.cache[f"indices-{str(index)}-{feature_name}"] = indices
             stub.app.cache[f"distances-{str(index)}-{feature_name}"] = distances
         return distances, indices
-    
+
     @modal.method()
     def update_df_center_node(self, index: int, feature_name: str) -> List[int]:
         distances, indices = self.k_nearest(index=index, feature_name=feature_name)
@@ -197,6 +202,7 @@ class DashApp:
     @staticmethod
     def parse_search(search: str) -> Dict[str, str | int]:
         from urllib.parse import parse_qs
+
         res = {
             "node": None,
             "key": None,
@@ -223,7 +229,7 @@ class DashApp:
         else:
             res["dim"] = None
         return res
-    
+
     @modal.method()
     @staticmethod
     def make_search(
@@ -233,6 +239,7 @@ class DashApp:
         dim: int = None,
     ):
         from urllib.parse import urlencode
+
         params = {
             "node": node,
             "e": key,
@@ -241,7 +248,7 @@ class DashApp:
         }
         filtered_params = {k: v for k, v in params.items() if v is not None}
         return "" if len(filtered_params) == 0 else "?" + urlencode(filtered_params)
-    
+
     @modal.method()
     def update(
         self,
@@ -260,7 +267,9 @@ class DashApp:
             # Show all nodes
             return (
                 "",
-                self.layout.default_figure(df=self.app_data.df, key=key, method=method, dim=dim),
+                self.layout.default_figure(
+                    df=self.app_data.df, key=key, method=method, dim=dim
+                ),
                 {"width": "100%"},
                 None,
                 {"width": "0%"},
@@ -276,7 +285,11 @@ class DashApp:
         if isinstance(shared_data, dict) and "options" in shared_data.keys():
             options = shared_data["options"]
         else:
-            options = self.container_data.default_options_en if en_mode else self.container_data.default_options
+            options = (
+                self.container_data.default_options_en
+                if en_mode
+                else self.container_data.default_options
+            )
 
         if clicked_data is not None:
             index = None
@@ -295,7 +308,9 @@ class DashApp:
                     )
                     index = current_indices[index]
 
-                indices = self.update_df_center_node(index=index, feature_name=feature_name)
+                indices = self.update_df_center_node(
+                    index=index, feature_name=feature_name
+                )
                 return (
                     self.make_search(
                         node=index,
@@ -313,8 +328,15 @@ class DashApp:
                     {"width": self.config.webapp.width_figure},
                     dbc.Row(
                         [
-                            self.layout.selected_paper_block(df=self.app_data.df, index=index, en_mode=en_mode),
-                            self.layout.recommendation_block(options=options, all_options=self.container_data.info_opts_en if en_mode else self.container_data.info_opts),
+                            self.layout.selected_paper_block(
+                                df=self.app_data.df, index=index, en_mode=en_mode
+                            ),
+                            self.layout.recommendation_block(
+                                options=options,
+                                all_options=self.container_data.info_opts_en
+                                if en_mode
+                                else self.container_data.info_opts,
+                            ),
                         ]
                     ),
                     {"width": self.config.webapp.width_details},
@@ -322,11 +344,7 @@ class DashApp:
                     None,
                 )
 
-        if (
-            params["key"] != key
-            or params["method"] != method
-            or params["dim"] != dim
-        ):
+        if params["key"] != key or params["method"] != method or params["dim"] != dim:
             print(search)
             search = self.make_search(
                 node=params["node"],
@@ -338,7 +356,9 @@ class DashApp:
             if params["node"] is None:
                 return (
                     search,
-                    self.layout.default_figure(df=self.app_data.df, key=key, method=method, dim=dim),
+                    self.layout.default_figure(
+                        df=self.app_data.df, key=key, method=method, dim=dim
+                    ),
                     {"width": "100%"},
                     None,
                     {"width": "0%"},
@@ -356,13 +376,22 @@ class DashApp:
                         key=key,
                         method=method,
                         dim=dim,
-                        indices=indices
+                        indices=indices,
                     ),
                     {"width": self.config.webapp.width_figure},
                     dbc.Row(
                         [
-                            self.layout.selected_paper_block(df=self.app_data.df, index=params["node"], en_mode=en_mode),
-                            self.layout.recommendation_block(options=options, all_options=self.container_data.info_opts_en if en_mode else self.container_data.info_opts),
+                            self.layout.selected_paper_block(
+                                df=self.app_data.df,
+                                index=params["node"],
+                                en_mode=en_mode,
+                            ),
+                            self.layout.recommendation_block(
+                                options=options,
+                                all_options=self.container_data.info_opts_en
+                                if en_mode
+                                else self.container_data.info_opts,
+                            ),
                         ]
                     ),
                     {"width": self.config.webapp.width_details},
@@ -381,7 +410,9 @@ class DashApp:
         )
 
     @modal.method()
-    def update_details(self, options: List[str] = None, search: str = None, pathname:str = None):
+    def update_details(
+        self, options: List[str] = None, search: str = None, pathname: str = None
+    ):
         print("update_details")
         try:
             params = self.parse_search(search=search)
@@ -392,26 +423,35 @@ class DashApp:
             dim = params["dim"]
             feature_name = f"{key}_{method}_{str(dim)}"
             _, indices = self.k_nearest(index=index, feature_name=feature_name)
-            return [self.layout.description_block(df=self.app_data.df, indices=indices[1:], options=options, start_rank=1, im_width="50%", en_mode=en_mode)], {
-                "options": options 
-            }
+            return [
+                self.layout.description_block(
+                    df=self.app_data.df,
+                    indices=indices[1:],
+                    options=options,
+                    start_rank=1,
+                    im_width="50%",
+                    en_mode=en_mode,
+                )
+            ], {"options": options}
         except Exception as e:
             print(e)
             return [dbc.Row()], {"options": options}
-        
+
 
 @stub.function(
-        network_file_systems={
+    network_file_systems={
         SHARED_ROOT: modal.NetworkFileSystem.persisted(ProjectConfig._shared_vol)
     },
     # cpu=1,
     memory=5120,
-    keep_warm=5,
+    # keep_warm=5,
 )
 @modal.wsgi_app()
 def wrapper():
-    return DashApp().get_server()
+    import dacite
+    import toml
 
-"""
-Runner failed with exception: InvalidError('The function has not been initialized.\n\nModal functions can only be called within an app. Try calling it from another running modal function or from an app run context:\n\nwith stub.run():\n    my_modal_function.call()\n')
-"""
+    print(CONFIG_FILE)
+    config = dacite.from_dict(data_class=Config, data=toml.load(CONFIG_FILE))
+
+    return DashApp(config=config).get_server()

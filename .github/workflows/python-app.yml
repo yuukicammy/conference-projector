@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "workflow"]
   pull_request:
     branches: [ "main" ]
 
@@ -14,26 +14,53 @@ permissions:
 
 jobs:
   build:
-
+  
     runs-on: ubuntu-latest
-
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 unittest
+        pip install flake8 black modal-client mypy
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    
+    - name: Check files using the black formatter
+      # https://github.com/marketplace/actions/run-black-formatter
+      uses: rickstaa/action-black@v1
+      id: action_black
+      with:
+        black_args: ". --check"
+         
+    - name: Annotate diff changes using reviewdog
+      if: steps.action_black.outputs.is_formatted == 'true'
+      uses: reviewdog/action-suggester@v1
+      with:
+        tool_name: blackfmt
+
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
     - name: Test with unittest
       run: |
-        unittest
+        modal token set --token-id ${{ secrets.MODAL_TOKEN_ID }} --token-secret ${{ secrets.MODAL_TOKEN_SECRET }}
+        modal run tests/test_main.py 
+
+    - name: Run mypy
+      uses: sasanquaneuf/mypy-github-action@releases/v1
+      with:
+        checkName: 'lint'   # NOTE: this needs to be the same as the job name
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if: ${{ always() }}
