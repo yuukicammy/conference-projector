@@ -4,9 +4,9 @@ from typing import Dict, Any
 import modal
 from PIL import Image
 
-from .config import ProjectConfig, Config, DBConfig
+from .config import ProjectConfig, Config
 
-stub = modal.Stub(ProjectConfig._stab_paper_image)
+stub = modal.Stub(ProjectConfig._stub_paper_image)
 SHARED_ROOT = "/root/.cache"
 
 
@@ -138,8 +138,8 @@ def search_arxiv(title: str) -> str:
 
 @stub.function(
     timeout=36000,
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def extract_image(
@@ -169,13 +169,13 @@ def extract_image(
     if not (Path(SHARED_ROOT) / paper["image_path"]).is_file():
         paper["image_path"] = ""
     paper["id"] = str(idx)
-    modal.Function.lookup(config.project._stab_db, "upsert_item").call(config.db, paper)
+    modal.Function.lookup(config.project._stub_db, "upsert_item").call(config.db, paper)
 
 
 @stub.function(
     image=modal.Image.debian_slim().pip_install("pymupdf", "Pillow", "requests"),
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
     retries=0,
     cpu=1,
@@ -260,8 +260,8 @@ def save_pdf_image(
     image=modal.Image.debian_slim()
     .apt_install("poppler-utils")
     .pip_install("pymupdf", "Pillow", "requests", "pdf2image", "arxiv"),
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
     retries=0,
     cpu=12,
@@ -277,7 +277,7 @@ def extract_representative_images(config: Config) -> None:
     import json
     import concurrent
 
-    papers = modal.Function.lookup(config.project._stab_db, "get_all_papers").call(
+    papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
         config.db, config.project.max_papers
     )
 
@@ -303,7 +303,7 @@ def extract_representative_images(config: Config) -> None:
                 tasks.append(
                     executor.submit(
                         modal.Function.lookup(
-                            config.project._stab_db, "upsert_item"
+                            config.project._stub_db, "upsert_item"
                         ).call,
                         config.db,
                         paper,

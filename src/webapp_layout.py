@@ -93,8 +93,14 @@ class Layout:
                         f'#### {self.container_data.properties[key]["description"]}\n'
                     )
                     description += f"{df.at[index, key]}\n"
-
-        return dbc.Row([title_block, info_base, dcc.Markdown(description)])
+        if len(df.at[index, "award"]) == 0:
+            return dbc.Row([title_block, info_base, dcc.Markdown(description)])
+        else:
+            award = dbc.Row(
+                dcc.Markdown(f'#### ★ {df.at[index, "award"]}'),
+                style={"color": "#824880"},
+            )
+            return dbc.Row([title_block, award, info_base, dcc.Markdown(description)])
 
     def description_block(
         self,
@@ -163,17 +169,18 @@ class Layout:
                 data_frame=df,
                 x=f"{feature_name}_x",
                 y=f"{feature_name}_y",
-                text=None,
+                text=df["award_text"],
                 hover_data={
                     "Title": df["long_title"],
                     "Category": df["long_category"],
                     "Application": df["long_application"],
+                    "Selection": df["award"],
                     f"{feature_name}_x": False,
                     f"{feature_name}_y": False,
                 },
-                template="ggplot2",
-                color=f"{feature_name}_x",
-                color_continuous_scale="tealrose",
+                color=df["award_label"],
+                color_discrete_sequence=px.colors.qualitative.Pastel,
+                category_orders=self.container_data.legend_orders,
             )
         elif dim == 3:
             fig = px.scatter_3d(
@@ -181,26 +188,33 @@ class Layout:
                 x=f"{feature_name}_x",
                 y=f"{feature_name}_y",
                 z=f"{feature_name}_z",
-                text=None,
+                text=df["award_text"],
                 hover_data={
                     "Title": df["long_title"],
                     "Category": df["long_category"],
                     "Application": df["long_application"],
+                    "Selection": df["award"],
                     f"{feature_name}_x": False,
                     f"{feature_name}_y": False,
                     f"{feature_name}_z": False,
                 },
-                template="ggplot2",
-                color=f"{feature_name}_x",
-                color_continuous_scale="tealrose",
+                color=df["award_label"],
+                color_discrete_sequence=px.colors.qualitative.Pastel,
+                category_orders=self.container_data.legend_orders,
             )
+        fig.update_traces(textposition="top center")
         fig.update_xaxes(title=None)
         fig.update_yaxes(title=None)
         fig.update_traces(
-            hovertemplate="<b>Title</b>: %{customdata[0]}<br><b>Category</b>: %{customdata[1]}<br><b>Application</b>: %{customdata[2]}",
+            hovertemplate="<b>Title</b>: %{customdata[0]}<br><b>Category</b>: %{customdata[1]}<br><b>Application</b>: %{customdata[2]}<br><b>Selection</b>: %{customdata[3]}",
         )
         fig.update_layout(
             overwrite=True,
+            font=dict(
+                # family="Courier New, monospace",
+                size=12,  # Set the font size here
+                color="gray",
+            ),
             annotations=[
                 dict(
                     text=info,
@@ -212,7 +226,7 @@ class Layout:
                     font=dict(size=12, color=self.config.webapp.color_fig_title),
                 )
             ],
-            showlegend=False,
+            # showlegend=False,
         )
         return fig
 
@@ -248,6 +262,7 @@ class Layout:
                     "Category": target_df["short_category"],
                     "Application": target_df["short_application"],
                     self.config.webapp.label_distance: True,
+                    "Selection": target_df["award"],
                     "text": False,
                     f"{feature_name}_x": False,
                     f"{feature_name}_y": False,
@@ -268,6 +283,7 @@ class Layout:
                     "Category": target_df["short_category"],
                     "Application": target_df["short_application"],
                     self.config.webapp.label_distance: True,
+                    "Selection": target_df["award"],
                     "text": False,
                     f"{feature_name}_x": False,
                     f"{feature_name}_y": False,
@@ -281,7 +297,7 @@ class Layout:
         fig.update_xaxes(title=None)
         fig.update_yaxes(title=None)
         fig.update_traces(
-            hovertemplate="<b>Title</b>: %{customdata[0]}<br><b>Category</b>: %{customdata[1]}<br><b>Application</b>: %{customdata[2]}<br><b>Distance</b>: %{customdata[3]}"
+            hovertemplate="<b>Title</b>: %{customdata[0]}<br><b>Category</b>: %{customdata[1]}<br><b>Application</b>: %{customdata[2]}<br><b>Distance</b>: %{customdata[3]}<br><b>Selection</b>: %{customdata[4]}"
         )
         fig.update_layout(
             overwrite=True,
@@ -308,7 +324,10 @@ class Layout:
             indices=[index],
             options=list(  # remove description_en because it is almost same as the abstract.
                 filter(
-                    lambda x: x != "description_en", self.container_data.info_opts_vals_en if en_mode  else self.container_data.info_opt_vals
+                    lambda x: x != "description_en",
+                    self.container_data.info_opts_vals_en
+                    if en_mode
+                    else self.container_data.info_opt_vals,
                 )
             ),
             start_rank=0,

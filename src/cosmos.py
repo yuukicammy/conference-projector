@@ -16,7 +16,7 @@ SHARED_ROOT = "/root/.cache"
 
 modal_image = modal.Image.debian_slim().pip_install("azure-cosmos")
 stub = modal.Stub(
-    ProjectConfig._stab_db,
+    ProjectConfig._stub_db,
     image=modal_image,
     secrets=[modal.Secret.from_name("cosmos-secret")],
     mounts=[
@@ -26,12 +26,18 @@ stub = modal.Stub(
     ],
 )
 
-stub.cache = modal.Dict()
+stub.cache = modal.Dict.new()
+
+if stub.is_inside():
+    import os
+    import azure.cosmos.cosmos_client as cosmos_client
+    import azure.cosmos.exceptions as exceptions
+    from azure.cosmos.partition_key import PartitionKey
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def get_container(db_config: DBConfig):
@@ -45,25 +51,13 @@ def get_container(db_config: DBConfig):
         azure.cosmos.cosmos_client.CosmosContainer: The container client.
 
     """
-    import os
-    import azure.cosmos.documents as documents
-    import azure.cosmos.cosmos_client as cosmos_client
-    import azure.cosmos.exceptions as exceptions
-
-    client = cosmos_client.CosmosClient(
-        db_config.uri,
-        {"masterKey": os.environ["PRIMARY_KEY"]},
-        user_agent="CosmosDBPythonQuickstart",
-        user_agent_overwrite=True,
-    )
-    db = client.get_database_client(db_config.database_id)
-    container = db.get_container_client(db_config.container_id)
+    container = create_db(db_config=db_config)
     return container
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
     timeout=3600,
 )
@@ -84,19 +78,23 @@ def get_all_papers(
         List[Dict[str, Any]]: The list of papers.
 
     """
-    from modal import container_app
 
     dict_str: str = (
         f"{db_config.uri}-{db_config.database_id}-{db_config.container_id}-all-papers"
     )
-    try:
-        if force:
-            raise Exception("")
-        item_list = container_app.cache[dict_str]
-    except:
-        container = get_container(db_config)
+    if (
+        force
+        or stub.name != ProjectConfig._stub_db
+        or not stub.is_inside()
+        or not stub.app.cache.contains(dict_str)
+    ):
+        container = create_db(db_config)
         item_list = list(container.read_all_items())
-        container_app.cache[dict_str] = item_list
+        if stub.is_inside():
+            stub.app.cache[dict_str] = item_list
+    else:
+        item_list = stub.app.cache[dict_str]
+
     if max_item_count is not None and 0 < max_item_count:
         return item_list[:max_item_count]
     else:
@@ -104,16 +102,15 @@ def get_all_papers(
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def query_items(
     db_config: DBConfig,
-    container,
     query: str = 'SELECT * FROM c WHERE c.id < "200"',
     force: bool = False,
-):
+) -> List[Dict[str, str]]:
     """
     Query items from the Azure Cosmos DB.
 
@@ -131,22 +128,27 @@ def query_items(
     from modal import container_app
 
     dict_str: str = f"{db_config.uri}-{db_config.database_id}-{db_config.container_id}-query-{query}"
-    try:
-        if force:
-            raise Exception("")
-        items = container_app.cache[dict_str]
-    except:
-        container = get_container(db_config)
+    items = []
+    if (
+        force
+        or stub.name != ProjectConfig._stub_db
+        or not stub.is_inside()
+        or not stub.app.cache.contains(dict_str)
+    ):
+        container = create_db(db_config)
         items = list(
-            container.query_items(query=query, enable_cross_partition_query=False)
+            container.query_items(query=query, enable_cross_partition_query=True)
         )
-        container_app.cache[dict_str] = items
-    return items  # Convert Unicode strings to UTF-8
+        if stub.is_inside():
+            container_app.cache[dict_str] = items
+    else:
+        items = container_app.cache[dict_str]
+    return items
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def get_num_papers(db_config: DBConfig) -> int:
@@ -161,14 +163,14 @@ def get_num_papers(db_config: DBConfig) -> int:
 
     """
     query = "SELECT VALUE COUNT(1) FROM c"
-    container = get_container(db_config)
-    result = container.query_items(query, enable_cross_partition_query=True)
+    container = create_db(db_config)
+    result = list(container.query_items(query, enable_cross_partition_query=True))
     return result[0]
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
 )
 def register_from_json(db_config: DBConfig, json_path: str) -> None:
@@ -194,9 +196,10 @@ def register_from_json(db_config: DBConfig, json_path: str) -> None:
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
+    timeout=720,
 )
 def upsert_item(db_config: DBConfig, item: Dict[Any, Any]) -> Dict[str, Any]:
     """
@@ -210,16 +213,13 @@ def upsert_item(db_config: DBConfig, item: Dict[Any, Any]) -> Dict[str, Any]:
         Dict[str, Any]: The upserted item.
 
     """
-    import azure.cosmos.cosmos_client as cosmos_client
-
     container = create_db(db_config)
-    res = container.upsert_item(body=item)
-    return res
+    return container.upsert_item(body=item)
 
 
 @stub.function(
-    shared_volumes={
-        SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
     secret=modal.Secret.from_name("cosmos-secret"),
 )
@@ -248,22 +248,24 @@ def create_db(db_config: DBConfig):
 
     try:
         db = client.create_database(id=db_config.database_id)
-        print("Database with id '{0}' created".format(db_config.database_id))
+        # print("Database with id '{0}' created".format(db_config.database_id))
 
     except exceptions.CosmosResourceExistsError:
         db = client.get_database_client(db_config.database_id)
-        print("Database with id '{0}' was found".format(db_config.database_id))
+        # print("Database with id '{0}' was found".format(db_config.database_id))
 
-    # setup container for this sample
+    # setup container
     try:
         container = db.create_container(
-            id=db_config.container_id, partition_key=PartitionKey(path="/partitionKey")
+            id=db_config.container_id,
+            partition_key=PartitionKey(path="/partitionKey"),
+            offer_throughput=400,
         )
-        print("Container with id '{0}' created".format(db_config.container_id))
+        # print("Container with id '{0}' created".format(db_config.container_id))
 
-    except exceptions.CosmosResourceExistsError:
+    except:
         container = db.get_container_client(db_config.container_id)
-        print("Container with id '{0}' was found".format(db_config.container_id))
+        # print("Container with id '{0}' was found".format(db_config.container_id))
     return container
 
 
