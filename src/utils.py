@@ -1,3 +1,7 @@
+from typing import List
+from pathlib import Path
+
+
 def insert_line_breaks(
     text: str,
     max_chars_per_line: int,
@@ -29,3 +33,22 @@ def insert_line_breaks(
             current_line = word + " "
     lines.append(current_line.strip())
     return prefix + newline.join(lines) + suffix
+
+
+def overwrite_image(
+    img_url: str | None, image_path: str, img_ignore_paths: List[str]
+) -> str | None:
+    import requests
+
+    if img_url is None:
+        return None
+
+    if img_url in img_ignore_paths:
+        return image_path
+
+    response = requests.get(img_url)
+    if response.status_code == 200:
+        Path(image_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(image_path, "wb") as f:
+            f.write(response.content)
+    return image_path
