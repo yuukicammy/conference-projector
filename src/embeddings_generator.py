@@ -11,7 +11,7 @@ import modal
 
 from .config import ProjectConfig, Config
 
-stub = modal.Stub(ProjectConfig._stab_embedding)
+stub = modal.Stub(ProjectConfig._stub_embedding)
 SHARED_ROOT = "/root/.cache"
 
 
@@ -97,10 +97,9 @@ def save_embeddings(config: Config) -> None:
     from pathlib import Path
     import numpy as np
 
-    papers = modal.Function.lookup(config.project._stab_db, "get_all_papers").call(
-        config.db
+    papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
+        db_config=config.db, max_item_count=config.project.max_papers
     )
-    papers = papers[: config.project.max_papers]
 
     converted = dict_list_to_list_dict(papers, config.embedding.keys)
     for key, list_data in converted.items():
