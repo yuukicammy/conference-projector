@@ -7,7 +7,7 @@ from .config import Config
 from .utils import insert_line_breaks
 
 SHARED_ROOT = "/root/.cache"
-CONFIG_FILE = "configs/defaults.toml"
+CONFIG_FILE = "configs/debug.toml"
 
 
 class ModalImageBuilder:
@@ -81,8 +81,10 @@ class ModalImageBuilder:
             newline="<br>",
         )
 
-        if 0 < len(paper["award"]):  # and paper["award"] != "Highlight":
+        if 0 < len(paper["award"]):
+            # For details description
             updated_paper["award_label"] = paper["award"]
+            # For scatter plot
             if paper["award"] == "Highlight" or paper["award"] == "Award Candidate":
                 updated_paper["award_text"] = ""
             else:
