@@ -15,16 +15,8 @@ class ContainerData:
 
     def __init__(self, config: Config) -> None:
         self.config = config
-        self.legend_orders = {
-            "award_label": [
-                "None",
-                "Highlight",
-                "Award Candidate",
-                "Honorable Mention (Student)",
-                "Honorable Mention",
-                "Best Paper",
-            ]
-        }
+        self.legend_orders = {"award_label": self.config.webapp.award_labels}
+        print("legend_orders: ", self.legend_orders)
 
         self.default_options = [
             "essence_en",
@@ -107,31 +99,29 @@ class WebappData:
     def update_center(
         self, index: int, distances: List[float], indices: List[int]
     ) -> None:
+        print("k-nearest indices: ", indices)
         max_dist = max(distances)
         self.df[self.config.webapp.label_distance] = [
             max_dist * 1.1
         ] * self.container_data.num_data
+        self.df["text"] = [""] * self.container_data.num_data
 
         for i in range(len(indices)):
             dist = distances[i]
             idx = indices[i]
             self.df.at[idx, self.config.webapp.label_distance] = dist
-            if i < self.config.webapp.num_text_nodes:
-                if i == 0:
-                    if (
-                        self.df.at[idx, "award"] is None
-                        or len(self.df.at[idx, "award"]) == 0
-                    ):
-                        self.df.at[idx, "text"] = "👇"
-                    else:
-                        self.df.at[idx, "text"] = self.df.at[idx, "award"] + "<br>👇"
+
+            if i == 0:
+                self.df.at[idx, "text"] = "👇"
+            elif i < self.config.webapp.num_text_nodes:
+                self.df.at[idx, "text"] = str(i)
+
+            if self.df.at[idx, "award"] is not None and 0 < len(
+                self.df.at[idx, "award"]
+            ):
+                if i < self.config.webapp.num_text_nodes:
+                    self.df.at[idx, "text"] = (
+                        self.df.at[idx, "award"] + "<br>" + self.df.at[idx, "text"]
+                    )
                 else:
-                    if (
-                        self.df.at[idx, "award"] is None
-                        or len(self.df.at[idx, "award"]) == 0
-                    ):
-                        self.df.at[idx, "text"] = str(i)
-                    else:
-                        self.df.at[idx, "text"] = (
-                            self.df.at[idx, "award"] + "<br>" + str(i)
-                        )
+                    self.df.at[idx, "text"] = self.df.at[idx, "award"]

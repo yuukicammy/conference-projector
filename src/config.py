@@ -150,6 +150,8 @@ class WebAppConfig:
     dimension_options: list = field(default_factory=list)
     dimension_reduction_options: list = field(default_factory=list)
 
+    award_labels: list = field(default_factory=list)
+
     width_figure: str = "60%"
     width_details: str = "40%"
 

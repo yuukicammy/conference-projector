@@ -86,7 +86,7 @@ class TestCVPRScraper(CPTestCase):
         for item in scraper.scrape_awards(
             config=self.config,
             award_titles=["Award Candidate"],
-            invalid_paths=self.config.highlight.img_ignore_paths,
+            invalid_paths=self.config.scraper.img_ignore_paths,
         ):
             if item["title"] == "What Can Human Sketches Do for Object Detection?":
                 item1 = item
@@ -102,7 +102,7 @@ class TestCVPRScraper(CPTestCase):
         for item in scraper.scrape_awards(
             config=self.config,
             award_titles=["Highlight"],
-            invalid_paths=self.config.highlight.img_ignore_paths,
+            invalid_paths=self.config.scraper.img_ignore_paths,
         ):
             if (
                 item["title"]

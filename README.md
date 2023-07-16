@@ -77,14 +77,13 @@ Thank you to arXiv for use of its open access interoperability.
 
 # ToDo
 - [ ] Type hints with "" 
-- [ ] Delete legend
 - [ ] English/Japanese settings
 - [ ] Modify the prompt
 - [ ] CI 
-   - [ ] unittest
+   - [x] lint 
+   - [x] unittest
    - [ ] mypy
-   - [ ] format 
 - [ ] CD
 - [ ] Improve representative image extraction algorithm
 - [ ] Mobile adaptation
-- [ ] Marker changes for important papers
+- [x] Marker changes for important papers

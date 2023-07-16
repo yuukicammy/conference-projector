@@ -100,7 +100,10 @@ class CVPRScraper(Scraper):
             yield paper
 
     def scrape_awards(
-        self, config: Config, award_titles: List[str], invalid_paths: List[str] | None
+        self,
+        config: Config,
+        award_titles: List[str],
+        invalid_paths: List[str] | None = None,
     ) -> Generator[Dict[str, str], None, None]:
         """
         Scrape paper awards from the CVPR website.
@@ -116,8 +119,8 @@ class CVPRScraper(Scraper):
         from bs4 import BeautifulSoup
         from urllib.parse import urljoin
 
-        print(config.highlight.award_details_url)
-        html = self.get_html(url=config.highlight.award_details_url)
+        print(config.scraper.award_details_url)
+        html = self.get_html(url=config.scraper.award_details_url)
         soup = BeautifulSoup(html, "html.parser")
 
         for award_title in award_titles:
@@ -128,7 +131,7 @@ class CVPRScraper(Scraper):
                 if invalid_paths is not None and img_path in invalid_paths:
                     img_url = None
                 else:
-                    img_url = urljoin(config.highlight.img_base_url, img_path)
+                    img_url = urljoin(config.scraper.img_base_url, img_path)
                 print("Title:", title)
                 print("Image URL:", img_url)
                 yield {"title": title, "image_url": img_url, "award": award_title}
@@ -196,7 +199,9 @@ def extract_awards_from_web(config: Config):
 
     # Scrape paper information one by one
     for award_items in scraper.scrape_awards(
-        config=config, award_titles=["Highlight", "Award Candidate"]
+        config=config,
+        award_titles=["Highlight", "Award Candidate"],
+        invalid_paths=config.scraper.img_ignore_paths,
     ):
         title = award_items["title"]
         im_url = award_items["image_url"]
@@ -221,7 +226,7 @@ def extract_awards_from_web(config: Config):
         overwrite_image(
             img_url=im_url,
             image_path=str(Path(SHARED_ROOT) / paper["image_path"]),
-            img_ignore_paths=config.highlight.img_ignore_paths,
+            img_ignore_paths=config.scraper.img_ignore_paths,
         )
         if not (Path(SHARED_ROOT) / paper["image_path"]).is_file():
             paper["image_path"] = ""
@@ -245,7 +250,7 @@ def extract_awards_from_config(config: Config):
     Args:
         config (Config): Configuration object.
     """
-    for item in config.highlight.award:
+    for item in config.scraper.award:
         award = item["label"]
         titles = item["values"]
         for title in titles:

@@ -175,8 +175,7 @@ class Layout:
                     "Category": df["long_category"],
                     "Application": df["long_application"],
                     "Selection": df["award"],
-                    f"{feature_name}_x": False,
-                    f"{feature_name}_y": False,
+                    "Id": df["id"],
                 },
                 color=df["award_label"],
                 color_discrete_sequence=px.colors.qualitative.Pastel,
@@ -194,9 +193,7 @@ class Layout:
                     "Category": df["long_category"],
                     "Application": df["long_application"],
                     "Selection": df["award"],
-                    f"{feature_name}_x": False,
-                    f"{feature_name}_y": False,
-                    f"{feature_name}_z": False,
+                    "Id": df["id"],
                 },
                 color=df["award_label"],
                 color_discrete_sequence=px.colors.qualitative.Pastel,
@@ -206,7 +203,7 @@ class Layout:
         fig.update_xaxes(title=None)
         fig.update_yaxes(title=None)
         fig.update_traces(
-            hovertemplate="<b>Title</b>: %{customdata[0]}<br><b>Category</b>: %{customdata[1]}<br><b>Application</b>: %{customdata[2]}<br><b>Selection</b>: %{customdata[3]}",
+            hovertemplate="<b>Title</b>: %{customdata[0]}<br><b>Category</b>: %{customdata[1]}<br><b>Application</b>: %{customdata[2]}<br><b>Selection</b>: %{customdata[3]}<br>Id: %{customdata[4]}",
         )
         fig.update_layout(
             overwrite=True,
@@ -238,6 +235,7 @@ class Layout:
         dim: int,
         indices: List[int] = None,
     ) -> plotly.graph_objs._figure.Figure:
+        indices.sort()
         feature_name = f"{key}_{method}_{str(dim)}"
         info = self.figure_info(
             key=key,
@@ -248,7 +246,7 @@ class Layout:
             text=info, max_chars_per_line=60, prefix="", suffix="", newline="<br>"
         )
         if indices is not None:
-            target_df = df.loc[indices]
+            target_df = df.iloc[indices]
         else:
             target_df = df
         if dim == 2:
@@ -263,9 +261,7 @@ class Layout:
                     "Application": target_df["short_application"],
                     self.config.webapp.label_distance: True,
                     "Selection": target_df["award"],
-                    "text": False,
-                    f"{feature_name}_x": False,
-                    f"{feature_name}_y": False,
+                    "Id": target_df["id"],  # Id must be the last in customdata
                 },
                 template="ggplot2",
                 color=self.config.webapp.label_distance,
@@ -284,10 +280,7 @@ class Layout:
                     "Application": target_df["short_application"],
                     self.config.webapp.label_distance: True,
                     "Selection": target_df["award"],
-                    "text": False,
-                    f"{feature_name}_x": False,
-                    f"{feature_name}_y": False,
-                    f"{feature_name}_z": False,
+                    "Id": target_df["id"],  # Id must be the last in customdata
                 },
                 template="ggplot2",
                 color=self.config.webapp.label_distance,
@@ -297,7 +290,7 @@ class Layout:
         fig.update_xaxes(title=None)
         fig.update_yaxes(title=None)
         fig.update_traces(
-            hovertemplate="<b>Title</b>: %{customdata[0]}<br><b>Category</b>: %{customdata[1]}<br><b>Application</b>: %{customdata[2]}<br><b>Distance</b>: %{customdata[3]}<br><b>Selection</b>: %{customdata[4]}"
+            hovertemplate="<b>Title</b>: %{customdata[0]}<br><b>Category</b>: %{customdata[1]}<br><b>Application</b>: %{customdata[2]}<br><b>Distance</b>: %{customdata[3]}<br><b>Selection</b>: %{customdata[4]}<br>Id: %{customdata[5]}"
         )
         fig.update_layout(
             overwrite=True,
