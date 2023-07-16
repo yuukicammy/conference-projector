@@ -1,67 +1,63 @@
 config_version = "0.0.1"
 
 [project]
+config_file = "configs/debug.toml" 
 dataname = "debug" 
-max_papers = 10 # Negative values mean no limit.
-num_workers = 42 
-stub_files = ["src/embeddings_generator.py", "src/image_extractor.py", "src/summaries_generator.py", "src/scraper.py", "src/cosmos.py"] 
-config_file="configs/debug.toml"
+max_papers = 100 # Negative values mean no limit.
+num_workers = 12 
+stub_files = ["src/scraper.py", "src/cosmos.py"] 
 
 [pipeline]
 deploy_stubs = true # except for pipline and webapp
 deploy_webapp = "src/webapp.py" # If deploy a webapp, specify the file name, otherwise "".
-stop_stubs=true
-download_data_locally = false
-initialize_volume = false
-run_scrape = true
-run_summarize = false
-run_embed = false
-run_paper_image = false
+download_data_locally = false 
+initialize_volume = false 
+run_embed = false 
+run_paper_image = false 
+run_scrape = true 
+run_summarize = false 
+stop_stubs = false 
 
 [files]
 force_extract_image = false
 image_max_size = 1024
 image_name_width = 4
+json_file = "debug.json"
 json_indent = 4
 local_output_dir = "data"
 save_json = true
-json_file  = "debug.json"
 
 [scraper]
-base_url = "https://openaccess.thecvf.com/"
-path_papers = "CVPR2023?day=all"
 award_details_url = "https://cvpr2023.thecvf.com/virtual/2023/awards_detail"
-img_base_url="https://cvpr2023.thecvf.com/"
-img_ignore_paths=["/static/core/img/CVPR-logo.svg"]
+base_url = "https://openaccess.thecvf.com/"
+img_base_url = "https://cvpr2023.thecvf.com/"
+img_ignore_paths = ["/static/core/img/CVPR-logo.svg"]
+path_papers = "CVPR2023?day=all"
 
-[[w.award]]
+[[scraper.award]]
 label = "Best Paper"
 values = [
-    "Visual Programming: Compositional Visual Reasoning Without Training",
-    "Planning-Oriented Autonomous Driving"
+  "Visual Programming: Compositional Visual Reasoning Without Training",
+  "Planning-Oriented Autonomous Driving",
 ]
 
 [[scraper.award]]
 label = "Honorable Mention"
 values = [
-    "DynIBaR: Neural Dynamic Image-Based Rendering"
+  "DynIBaR: Neural Dynamic Image-Based Rendering",
 ]
 
 [[scraper.award]]
 label = "Best Student Paper"
 values = [
-    "3D Registration with Maximal Cliques"
+  "3D Registration with Maximal Cliques",
 ]
 
 [[scraper.award]]
 label = "Honorable Mention (Student)"
 values = [
-    "DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation"
+  "DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation",
 ]
-
-
-
-
 
 [embedding]
 # see https://platform.openai.com/docs/guides/production-best-practices/improving-latencies
@@ -83,8 +79,8 @@ color_fig_title = "#43676b"
 color_not_selectd = "#c099a0"
 color_selected = "#895b8a"
 
-init_trees = false
 init_papers = false
+init_trees = false
 margine_default = "10px"
 margine_title_bottom = "20px"
 node_size_default = 8
@@ -114,7 +110,7 @@ text_selection_description = "Your Selection"
 text_top_description = "Clicking on a node will display information about that paper and papers close to it."
 
 title = "Conference Projector: CVPR 2023"
-title_url = "https://yuukicammy--paper-viz-webapp-wrapper.modal.run" # "https://yuukicammy--conference-projector-wrapper.modal.run"
+title_url = "https://yuukicammy--conference-projector-wrapper.modal.run"
 
 label_dimension = "Dimension"
 label_distance = "Distance"
@@ -129,6 +125,14 @@ web_description = "See the Big Picture and Find Papers Accepted in the Internati
 web_icon = "https://drive.google.com/uc?export=download&id=1WYCjr3Rxi9Q-2INWPchdMmumsEdtCvHg"
 web_title = "Conference Projector"
 
+award_labels = [
+  "None",
+  "Highlight",
+  "Award Candidate",
+  "Honorable Mention (Student)",
+  "Honorable Mention",
+  "Best Paper",
+]
 
 [[webapp.embedding_options]]
 label = "Category"
@@ -170,4 +174,3 @@ value = "tsne"
 container_id = "Container-01"
 database_id = "debug"
 uri = "https://papers-projector.documents.azure.com:443/"
-

@@ -138,7 +138,7 @@ def clone_db(from_db_config: DBConfig, to_db_config: DBConfig) -> None:
 @stub.function(
     network_file_systems={
         "/root/source": modal.NetworkFileSystem.from_name("paper-viz-vol"),
-        "/root/target": modal.NetworkFileSystem.from_name("cp-debug-vol"),
+        "/root/target": modal.NetworkFileSystem.from_name("cp-stg-vol"),
     },
 )
 def clone_nfs(from_dir: str | None = "cvpr2023", to_dir: str | None = None):
@@ -151,7 +151,7 @@ def clone_nfs(from_dir: str | None = "cvpr2023", to_dir: str | None = None):
     if to_dir is not None and 0 < len(to_dir):
         to_root_dir = to_root_dir / to_dir
 
-    for source_file_path in from_root_dir.rglob("*.png"):
+    for source_file_path in from_root_dir.rglob("*"):
         if source_file_path.is_file():
             relative_path = source_file_path.relative_to(from_root_dir)
             destination_file_path = to_root_dir / relative_path
@@ -163,12 +163,15 @@ def clone_nfs(from_dir: str | None = "cvpr2023", to_dir: str | None = None):
             shutil.copy2(source_file_path, destination_file_path)
 
 
-@stub.function(timeout=3600)
+@stub.function(timeout=3600, cpu=12)
 def add_columns(config: Config, keys: List[str]):
+    import concurrent
+
     num_papers = modal.Function.lookup(ProjectConfig._stub_db, "get_num_papers").call(
         db_config=config.db
     )
-    for i in range(min(num_papers, config.project.max_papers)):
+
+    def process_paper(i: int):
         paper = modal.Function.lookup(ProjectConfig._stub_db, "query_items").call(
             db_config=config.db,
             query=f'SELECT * FROM c WHERE c.id = "{str(i)}"',
@@ -185,6 +188,11 @@ def add_columns(config: Config, keys: List[str]):
                 db_config=config.db, item=paper
             )
 
+    num_papers = min(num_papers, config.project.max_papers)
+    with concurrent.futures.ThreadPoolExecutor(config.project.num_workers) as executor:
+        futures = [executor.submit(process_paper, i) for i in range(num_papers)]
+        concurrent.futures.wait(futures)
+
 
 @stub.local_entrypoint()
 def main(config_file: str = "configs/debug.toml"):
@@ -197,12 +205,15 @@ def main(config_file: str = "configs/debug.toml"):
 
     # clone_nfs.call(from_dir="cvpr2023", to_dir="cvpr2023")
 
+    # add_columns.call(config=config, keys=["award"])
+
     # from_db_config = DBConfig(
     #     database_id="cvpr2023", container_id="Container-01", uri=config.db.uri
     # )
     # to_db_config = config.db
     # clone_db.call(from_db_config=from_db_config, to_db_config=to_db_config)
-    # run_pipeline(config)
+
+    run_pipeline(config)
 
 
 if __name__ == "__main__":

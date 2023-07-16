@@ -81,8 +81,10 @@ class ModalImageBuilder:
             newline="<br>",
         )
 
-        if 0 < len(paper["award"]):  # and paper["award"] != "Highlight":
+        if 0 < len(paper["award"]):
+            # For details description
             updated_paper["award_label"] = paper["award"]
+            # For scatter plot
             if paper["award"] == "Highlight" or paper["award"] == "Award Candidate":
                 updated_paper["award_text"] = ""
             else:
@@ -193,14 +195,15 @@ class ModalImageBuilder:
         print(f"Done. The num of papers: {len(papers)}.")
 
         print("Loading image files...")
+        set_papers = []
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.config.project.num_workers
         ) as executor:
             futures = [executor.submit(self.setup_paper, paper) for paper in papers]
             for future in concurrent.futures.as_completed(futures):
                 paper = future.result()
-                papers[int(paper["id"])] = paper
-        return papers
+                set_papers.append(paper)
+        return sorted(set_papers, key=lambda x: int(x["id"]))
 
     def create_data_frame(self):
         import pickle
@@ -236,6 +239,9 @@ class ModalImageBuilder:
         for key, value in data_frame.items():
             print(f"{key} length: {len(value)}")
         data_frame = pd.DataFrame(data=data_frame)
+        for idx in range(len(data_frame)):
+            # print("id value: ", data_frame.at[idx, "id"], ", index: ", idx)
+            assert int(data_frame.at[idx, "id"]) == idx
         return data_frame
 
     def build(self):

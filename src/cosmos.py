@@ -90,6 +90,7 @@ def get_all_papers(
     ):
         container = create_db(db_config)
         item_list = list(container.read_all_items())
+        item_list = sorted(item_list, key=lambda x: int(x["id"]))
         if stub.is_inside():
             stub.app.cache[dict_str] = item_list
     else:

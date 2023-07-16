@@ -83,6 +83,7 @@ if stub.is_inside():
     import pandas as pd
     import plotly
     import plotly.express as px
+    from scipy.spatial import cKDTree
 
 
 @stub.cls(
@@ -175,11 +176,11 @@ class DashApp:
 
     @modal.method()
     def k_nearest(self, index: int, feature_name: str) -> Tuple[List[float], List[int]]:
-        from scipy.spatial import cKDTree
-
-        if stub.app.cache.contains(
-            f"indices-{str(index)}-{feature_name}"
-        ) and stub.app.cache.contains(f"distances-{str(index)}-{feature_name}"):
+        if (
+            False
+            and stub.app.cache.contains(f"indices-{str(index)}-{feature_name}")
+            and stub.app.cache.contains(f"distances-{str(index)}-{feature_name}")
+        ):
             indices = stub.app.cache[f"indices-{str(index)}-{feature_name}"]
             distances = stub.app.cache[f"distances-{str(index)}-{feature_name}"]
         else:
@@ -291,58 +292,46 @@ class DashApp:
                 else self.container_data.default_options
             )
 
-        if clicked_data is not None:
-            index = None
-            if "pointIndex" in clicked_data["points"][0].keys():
-                index = clicked_data["points"][0]["pointIndex"]
-            elif "pointNumber" in clicked_data["points"][0].keys():
-                index = clicked_data["points"][0]["pointNumber"]
-            if index is not None:
-                print(index)
-                if (
-                    params["node"] is not None
-                    and index <= self.config.webapp.num_neighborhoods
-                ):
-                    _, current_indices = self.k_nearest(
-                        index=params["node"], feature_name=feature_name
-                    )
-                    index = current_indices[index]
-
-                indices = self.update_df_center_node(
-                    index=index, feature_name=feature_name
-                )
-                return (
-                    self.make_search(
-                        node=index,
-                        key=key,
-                        method=method,
-                        dim=dim,
-                    ),
-                    self.layout.selected_figure(
-                        df=self.app_data.df,
-                        key=key,
-                        method=method,
-                        dim=dim,
-                        indices=indices,
-                    ),
-                    {"width": self.config.webapp.width_figure},
-                    dbc.Row(
-                        [
-                            self.layout.selected_paper_block(
-                                df=self.app_data.df, index=index, en_mode=en_mode
-                            ),
-                            self.layout.recommendation_block(
-                                options=options,
-                                all_options=self.container_data.info_opts_en
-                                if en_mode
-                                else self.container_data.info_opts,
-                            ),
-                        ]
-                    ),
-                    {"width": self.config.webapp.width_details},
-                    dash.no_update,
-                    None,
-                )
+        if (
+            clicked_data is not None
+            and "points" in clicked_data.keys()
+            and 0 < len(clicked_data["points"])
+        ):
+            print(clicked_data)
+            index = int(clicked_data["points"][0]["customdata"][-1])
+            indices = self.update_df_center_node(index=index, feature_name=feature_name)
+            return (
+                self.make_search(
+                    node=index,
+                    key=key,
+                    method=method,
+                    dim=dim,
+                ),
+                self.layout.selected_figure(
+                    df=self.app_data.df,
+                    key=key,
+                    method=method,
+                    dim=dim,
+                    indices=indices,
+                ),
+                {"width": self.config.webapp.width_figure},
+                dbc.Row(
+                    [
+                        self.layout.selected_paper_block(
+                            df=self.app_data.df, index=index, en_mode=en_mode
+                        ),
+                        self.layout.recommendation_block(
+                            options=options,
+                            all_options=self.container_data.info_opts_en
+                            if en_mode
+                            else self.container_data.info_opts,
+                        ),
+                    ]
+                ),
+                {"width": self.config.webapp.width_details},
+                dash.no_update,
+                None,
+            )
 
         if params["key"] != key or params["method"] != method or params["dim"] != dim:
             print(search)
