@@ -176,11 +176,9 @@ class DashApp:
 
     @modal.method()
     def k_nearest(self, index: int, feature_name: str) -> Tuple[List[float], List[int]]:
-        if (
-            False
-            and stub.app.cache.contains(f"indices-{str(index)}-{feature_name}")
-            and stub.app.cache.contains(f"distances-{str(index)}-{feature_name}")
-        ):
+        if stub.app.cache.contains(
+            f"indices-{str(index)}-{feature_name}"
+        ) and stub.app.cache.contains(f"distances-{str(index)}-{feature_name}"):
             indices = stub.app.cache[f"indices-{str(index)}-{feature_name}"]
             distances = stub.app.cache[f"distances-{str(index)}-{feature_name}"]
         else:
