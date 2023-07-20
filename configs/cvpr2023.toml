@@ -1,0 +1,176 @@
+config_version = "0.0.1"
+
+[project]
+config_file = "configs/cvpr2023.toml" 
+dataname = "cvpr2023" 
+max_papers = -1 # Negative values mean no limit.
+num_workers = 12 
+stub_files = ["src/scraper.py", "src/cosmos.py"] 
+
+[pipeline]
+deploy_stubs = true # except for pipline and webapp
+deploy_webapp = "src/webapp.py" # If deploy a webapp, specify the file name, otherwise "".
+download_data_locally = false 
+initialize_volume = false 
+run_embed = false 
+run_paper_image = false 
+run_scrape = true 
+run_summarize = false 
+stop_stubs = false 
+
+[files]
+force_extract_image = false
+image_max_size = 1024
+image_name_width = 4
+json_file = "debug.json"
+json_indent = 4
+local_output_dir = "data"
+save_json = true
+
+[scraper]
+award_details_url = "https://cvpr2023.thecvf.com/virtual/2023/awards_detail"
+base_url = "https://openaccess.thecvf.com/"
+img_base_url = "https://cvpr2023.thecvf.com/"
+img_ignore_paths = ["/static/core/img/CVPR-logo.svg"]
+path_papers = "CVPR2023?day=all"
+
+[[scraper.award]]
+label = "Best Paper"
+values = [
+  "Visual Programming: Compositional Visual Reasoning Without Training",
+  "Planning-Oriented Autonomous Driving",
+]
+
+[[scraper.award]]
+label = "Honorable Mention"
+values = [
+  "DynIBaR: Neural Dynamic Image-Based Rendering",
+]
+
+[[scraper.award]]
+label = "Best Student Paper"
+values = [
+  "3D Registration with Maximal Cliques",
+]
+
+[[scraper.award]]
+label = "Honorable Mention (Student)"
+values = [
+  "DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation",
+]
+
+[embedding]
+# see https://platform.openai.com/docs/guides/production-best-practices/improving-latencies
+batch_size = 20
+keys = ["title", "abstract", "category_en", "application_en"]
+model = "text-embedding-ada-002"
+retry = 5
+
+[summary]
+description = "Formatted summary of the paper."
+function_schema_file = "data/prompts/function_schema.json"
+model = "gpt-3.5-turbo-0613"
+prompt_file = "data/prompts/summary_prompt.txt"
+retry = 5
+sleep = 0.1
+
+[webapp]
+color_fig_title = "#43676b"
+color_not_selectd = "#c099a0"
+color_selected = "#895b8a"
+
+init_papers = false
+init_trees = false
+margine_default = "10px"
+margine_title_bottom = "20px"
+node_size_default = 8
+node_symbol_clicked = "star"
+node_symbol_default = "circle"
+node_symbol_selected = "diamond"
+num_colors = 2000
+num_neighborhoods = 22
+
+max_chars_long = 60
+max_chars_short = 30
+max_hight = "800px"
+
+num_text_nodes = 10
+size_code = 12
+size_default = 12
+size_title = 20
+
+size_fig_title_large = 20
+size_fig_title_small = 16
+
+text_concern_description = "From what perspective do you search for papers?"
+text_details_default = "Click a node for paper information."
+text_figure_title_format = "{} Projection: CVPR 2023"
+text_recommendation_description = "Recommendations"
+text_selection_description = "Your Selection"
+text_top_description = "Clicking on a node will display information about that paper and papers close to it."
+
+title = "Conference Projector: CVPR 2023"
+title_url = "https://yuukicammy--conference-projector-wrapper.modal.run"
+
+label_dimension = "Dimension"
+label_distance = "Distance"
+label_embeddings = "Concern"
+label_options = "Options"
+label_projection_algorithm = "Projection Algorithm"
+
+width_details = "60%"
+width_figure = "40%"
+
+web_description = "See the Big Picture and Find Papers Accepted in the International Conference powered by OpenAI"
+web_icon = "https://drive.google.com/uc?export=download&id=1WYCjr3Rxi9Q-2INWPchdMmumsEdtCvHg"
+web_title = "Conference Projector"
+
+award_labels = [
+  "None",
+  "Highlight",
+  "Award Candidate",
+  "Honorable Mention (Student)",
+  "Honorable Mention",
+  "Best Paper",
+]
+
+[[webapp.embedding_options]]
+label = "Category"
+value = "category_en"
+
+[[webapp.embedding_options]]
+label = "Application"
+value = "application_en"
+
+[[webapp.embedding_options]]
+label = "Title"
+value = "title"
+
+[[webapp.embedding_options]]
+label = "Abstract"
+value = "abstract"
+
+[[webapp.dimension_options]]
+label = "2D"
+value = 2
+
+[[webapp.dimension_options]]
+label = "3D"
+value = 3
+
+[[webapp.dimension_reduction_options]]
+label = "PCA"
+value = "pca"
+
+[[webapp.dimension_reduction_options]]
+label = "UMAP"
+value = "umap"
+
+[[webapp.dimension_reduction_options]]
+label = "t-SNE"
+value = "tsne"
+
+[db]
+container_id = "Container-01"
+database_id = "cvpr2023"
+uri = "https://papers-projector.documents.azure.com:443/"
