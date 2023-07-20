@@ -50,7 +50,6 @@ class Scraper:
     def search_arxiv(self, title: str) -> str:
         import arxiv
 
-        print("Query Title: ", title)
         arxiv_id = ""
         try:
             for res in arxiv.Search(
@@ -60,7 +59,6 @@ class Scraper:
                     res.title.replace("\n", "").replace(" ", "").lower()
                     == title.replace("\n", "").replace(" ", "").lower()
                 ):
-                    print("Found Title: ", res.title)
                     arxiv_id = res.entry_id.split("/")[-1]
                     arxiv_id = arxiv_id.split("v")[0]
                     break
