@@ -16,7 +16,7 @@ def stub_dict_factory(items: list[tuple[str, str]]) -> dict[str, str]:
 
 @dataclass
 class ProjectConfig:
-    _name: str = "cp-stg"
+    _name: str = "cp-stg"  # prod: paper-viz, staging: cp-stg, debug: cp-debug
     _shared_vol: str = f"{_name}-vol"
     _stub_embedding: str = f"{_name}-embedding"
     _stub_scraper: str = f"{_name}-scraper"
