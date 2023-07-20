@@ -5,7 +5,7 @@ Scrape paper titles and related information.
 """
 
 import modal
-from typing import List, Dict, Generator
+from typing import List, Dict, Any, Generator
 from pathlib import Path
 import json
 
@@ -46,6 +46,61 @@ class Scraper:
             NotImplemented: This method is intended to be overridden by subclasses.
         """
         return NotImplemented
+
+    def search_arxiv(self, title: str) -> str:
+        import arxiv
+
+        print("Query Title: ", title)
+        arxiv_id = ""
+        try:
+            for res in arxiv.Search(
+                query=f"{title}"
+            ).results():  # Do not search with "ti" because title search with "ti" will not find some titles.
+                if (
+                    res.title.replace("\n", "").replace(" ", "").lower()
+                    == title.replace("\n", "").replace(" ", "").lower()
+                ):
+                    print("Found Title: ", res.title)
+                    arxiv_id = res.entry_id.split("/")[-1]
+                    arxiv_id = arxiv_id.split("v")[0]
+                    break
+        except arxiv.arxiv.UnexpectedEmptyPageError as e:
+            print(e)
+        finally:
+            return arxiv_id
+
+    def search_open_review(self, title: str) -> Dict[str, Any] | None:
+        import requests
+        from urllib.parse import urljoin
+        from urllib.parse import quote
+
+        base_url = "https://api2.openreview.net/notes/search"
+        search_params = {
+            "query": quote(title),
+            "limit": 100,  # Number of search results to retrieve (adjust as needed)
+        }
+
+        response = requests.get(base_url, params=search_params)
+        if response.status_code == 200:
+            search_results = response.json()
+            for note in search_results["notes"]:
+                if (
+                    note["content"]["title"]["value"]
+                    .replace("\n", "")
+                    .replace(" ", "")
+                    .lower()
+                    == title.replace("\n", "").replace(" ", "").lower()
+                ):
+                    abstract = note["content"]["abstract"]["value"].strip()
+                    pdf_path = note["content"]["pdf"]["value"].strip()
+                    pdf_url = urljoin("https://openreview.net/", pdf_path)
+                    return {"abstract": abstract, "pdf_url": pdf_url}
+            return None
+        else:
+            print(
+                f"Failed to retrieve search results. Status code: {response.status_code}"
+            )
+            return None
 
 
 class CVPRScraper(Scraper):
