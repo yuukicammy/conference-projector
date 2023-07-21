@@ -190,6 +190,131 @@ class CVPRScraper(Scraper):
                 yield {"title": title, "image_url": img_url, "award": award_title}
 
 
+class ICMLScraper(Scraper):
+    def scrape(self) -> Generator[Dict[str, str], None, None]:
+        """
+        Scrape paper titles and related information from the ICML website.
+
+        Yields:
+            Dict[str, str]: Dictionary containing the scraped information for each paper.
+        """
+        from bs4 import BeautifulSoup
+        from urllib.parse import urljoin
+
+        html = self.get_html(
+            url=urljoin(self.config.scraper.base_url, self.config.scraper.path_papers)
+        )
+        soup = BeautifulSoup(html, "html.parser")
+
+        # All titles
+        li_elements = soup.find_all("li", recursive=True)
+        for li_element in li_elements:
+            a_element = li_element.find("a")
+            if (
+                a_element
+                and "href" in a_element.attrs
+                and a_element["href"].startswith("/virtual/2023/poster/")
+            ):
+                title_path = a_element["href"]
+                title = a_element.text.strip()
+            else:
+                continue
+
+            # Scrape image url from the paper page.
+            paper_html = self.get_html(
+                url=urljoin(self.config.scraper.base_url, title_path)
+            )
+            paper_soup = BeautifulSoup(paper_html, "html.parser")
+
+            # Find the <script> tag with type "application/ld+json"
+            script_tag = paper_soup.find("script", type="application/ld+json")
+
+            if script_tag:
+                # Extract the content of the <script> tag as a JSON object
+                script_content = json.loads(script_tag.string)
+
+                # Extract the "contentUrl" from the JSON object
+                content_url = script_content.get("contentUrl", None)
+
+                image_url = ""
+                if content_url:
+                    if content_url not in self.config.scraper.img_ignore_paths:
+                        image_url = urljoin(self.config.scraper.base_url, content_url)
+
+            paper = {
+                "url": urljoin(self.config.scraper.base_url, title_path),
+                "pdf_url": urljoin(self.config.scraper.base_url, title_path),
+                "arxiv_id": "",
+                "title": title,
+                "abstract": "",
+                "award": "",
+                "type": "",
+                "image_url": image_url,
+            }
+            yield paper
+
+    def scrape_orals(self) -> Generator[Dict[str, str], None, None]:
+        from bs4 import BeautifulSoup
+        from urllib.parse import urljoin
+
+        oral_url = "https://icml.cc/virtual/2023/events/oral"
+        paper_html = self.get_html(url=oral_url)
+        soup = BeautifulSoup(paper_html, "html.parser")
+
+        # Find all the <div> elements with class "displaycards touchup-date"
+        paper_divs = soup.find_all(
+            "div", class_="displaycards touchup-date", recursive=True
+        )
+
+        for paper_div in paper_divs:
+            # Extract the title and URL
+            title_elem = paper_div.find("a", class_="small-title")
+            if title_elem:
+                title = title_elem.text.strip()
+            else:
+                continue
+
+            # Extract the abstract
+            abstract_elem = paper_div.find("div", class_="abstract-display")
+            if abstract_elem:
+                abstract = abstract_elem.text.strip()
+            else:
+                abstract = "Abstract not available."
+
+            img_elem = paper_div.find("img", class_="social-img-thumb")
+            if img_elem and img_elem["src"] not in self.config.scraper.img_ignore_paths:
+                img_url = urljoin(self.config.scraper.base_url, img_elem["src"])
+            else:
+                img_url = ""
+            yield {
+                "title": title,
+                "abstract": abstract,
+                "type": "oral",
+                "image_url": img_url,
+            }
+
+    def scrape_arxiv(self, title: str) -> Dict[str, str] | None:
+        from bs4 import BeautifulSoup
+        from urllib.parse import urljoin
+
+        arxiv_id = self.search_arxiv(title=title)
+        if len(arxiv_id) == 0:
+            return None
+
+        html = self.get_html(url=urljoin("https://arxiv.org/abs/", arxiv_id))
+        soup = BeautifulSoup(html, "html.parser")
+        abstract_meta = soup.find("meta", attrs={"name": "citation_abstract"})
+
+        if abstract_meta:
+            # Extract the content of the "citation_abstract" meta tag
+            abstract = abstract_meta["content"].strip()
+        else:
+            abstract = ""
+        pdf_url = urljoin("https://arxiv.org/pdf/", f"{arxiv_id}.pdf")
+
+        return {"arxiv_id": arxiv_id, "abstract": abstract, "pdf_url": pdf_url}
+
+
 @stub.function(
     image=modal.Image.debian_slim().pip_install("beautifulsoup4", "requests"),
     network_file_systems={
