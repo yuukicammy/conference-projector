@@ -631,6 +631,12 @@ def main(config_file: str = "configs/icml2023.toml"):
     config = dacite.from_dict(data_class=Config, data=toml.load(config_file))
     print(config)
 
-    extract_papers_from_web.call(config=config)
-    extract_awards_from_web.call(config=config)
-    extract_awards_from_config.call(config=config)
+    pipline_icml_2023.call(
+        config=config,
+        scrape_title=False,
+        scrape_orals=False,
+        scrape_arxiv=True,
+        scrape_open_review=True,
+    )
+    # extract_awards_from_web.call(config=config)
+    # extract_awards_from_config.call(config=config)
