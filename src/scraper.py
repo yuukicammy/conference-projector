@@ -53,7 +53,7 @@ class Scraper:
         arxiv_id = ""
         try:
             for res in arxiv.Search(
-                query=f"{title}"
+                query=f'{title.replace("-", " ")}'
             ).results():  # Do not search with "ti" because title search with "ti" will not find some titles.
                 if (
                     res.title.replace("\n", "").replace(" ", "").lower()
@@ -70,18 +70,17 @@ class Scraper:
     def search_open_review(self, title: str) -> Dict[str, Any] | None:
         import requests
         from urllib.parse import urljoin
-        from urllib.parse import quote
 
         base_url = "https://api2.openreview.net/notes/search"
         search_params = {
-            "query": quote(title),
-            "limit": 100,  # Number of search results to retrieve (adjust as needed)
+            "query": title.replace("/", "\/").replace("!", ""),
+            "limit": 10,  # Number of search results to retrieve (adjust as needed)
         }
-
-        response = requests.get(base_url, params=search_params)
+        response = requests.get(url=base_url, params=search_params)
         if response.status_code == 200:
             search_results = response.json()
             for note in search_results["notes"]:
+                # print(note["content"]["title"]["value"])
                 if (
                     note["content"]["title"]["value"]
                     .replace("\n", "")
@@ -96,7 +95,7 @@ class Scraper:
             return None
         else:
             print(
-                f"Failed to retrieve search results. Status code: {response.status_code}"
+                f"Failed to retrieve search results. Status code: {response.status_code}, {response.json()}"
             )
             return None
 
@@ -331,10 +330,10 @@ def extract_papers_from_web(config: Config):
     Args:
         config (Config): Configuration object.
     """
-    scraper = CVPRScraper(config=config)
+    scraper = ICMLScraper(config=config)
     papers = []
 
-    # Scrape paper information one by one
+    # Scrape all paper information one by one
     for idx, paper in enumerate(scraper.scrape()):
         if config.project.max_papers <= idx:
             break
@@ -619,7 +618,7 @@ def extract_awards_from_config(config: Config):
 
 
 @stub.local_entrypoint()
-def main(config_file: str = "configs/defaults.toml"):
+def main(config_file: str = "configs/icml2023.toml"):
     """
     Main function to extract paper and award information from the web.
 
