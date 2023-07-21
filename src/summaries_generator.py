@@ -99,6 +99,64 @@ def request_chat(
     return None
 
 
+def generate_summary(idx: int, config: Config) -> None:
+    import time
+
+    # Load the current information
+    items = modal.Function.lookup(ProjectConfig._stub_db, "query_items").call(
+        db_config=config.db,
+        query=f'SELECT * FROM c WHERE c.id = "{str(idx)}"',
+        force=True,
+    )
+    if items is None or len(items) == 0:
+        print(f"Cannot load paper {idx} from db: {config.db}.")
+        return
+    paper = items[0]
+    if all(
+        [
+            paper.get(key) and 0 < len(paper[key])
+            for key in config.summary.function_schema["parameters"]["properties"].keys()
+        ]
+    ):
+        print(f"The paper {idx} has all generated texts.")
+        return
+    retry = config.summary.retry
+    while 0 <= retry:
+        try:
+            time_sta = time.perf_counter()
+            result = request_chat(
+                config.summary.prompt.format(paper["title"], paper["abstract"]),
+                paper,
+                [config.summary.function_schema],
+                config.summary.model,
+                0,
+                False,
+            )
+            for key in config.summary.function_schema["parameters"][
+                "properties"
+            ].keys():
+                if result.get(key) is None or len(result[key]) == 0:
+                    raise Exception(
+                        f"Fail to generate summary. {key} is not generated. Paper id {idx}."
+                    )
+                paper[key] = (
+                    result[key]
+                    .encode("utf-8")
+                    .decode("utf-8")  # Convert Unicode strings to UTF-8
+                )
+            time_end = time.perf_counter()
+            print(f"Request chat latency: {time_end - time_sta}")
+            # Update the paper information
+            modal.Function.lookup(config.project._stub_db, "upsert_item").call(
+                config.db, paper
+            )
+            return
+        except Exception as e:
+            print(f"Error happen in generate_summary.", e)
+            retry -= 1
+    print(f"The upper limit of RETRY is now reached in generating summary {idx}.")
+
+
 @stub.function(
     image=modal.Image.debian_slim().pip_install(
         "openai"
@@ -121,66 +179,22 @@ def generate_summaries(config: Config) -> None:
     Returns:
         None
     """
-    import time
+    import concurrent
 
-    papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
-        db_config=config.db, max_item_count=config.project.max_papers
+    num_papers = modal.Function.lookup(ProjectConfig._stub_db, "get_num_papers").call(
+        db_config=config.db
     )
-    for idx, paper in enumerate(papers):
-        retry = config.summary.retry
-        if all(
-            [
-                paper.get(key) and 0 < len(paper[key])
-                for key in config.summary.function_schema["parameters"][
-                    "properties"
-                ].keys()
-            ]
-        ):
-            print(f"skip {idx}")
-            continue
-        while 0 <= retry:
-            try:
-                print(f"request {idx}")
-                time_sta = time.perf_counter()
-                result = request_chat(
-                    config.summary.prompt.format(paper["title"], paper["abstract"]),
-                    paper,
-                    [config.summary.function_schema],
-                    config.summary.model,
-                    config.summary.retry,
-                    False,
-                )
-                for key in config.summary.function_schema["parameters"][
-                    "properties"
-                ].keys():
-                    if result.get(key) is None:
-                        raise Exception(
-                            f"Fail to generate summary. {key} is not generated."
-                        )
-                    paper[key] = (
-                        result[key]
-                        .encode("utf-8")
-                        .decode("utf-8")  # Convert Unicode strings to UTF-8
-                    )
-                time_end = time.perf_counter()
-                print(f"chat request: {time_end- time_sta}")
-                time_sta = time.perf_counter()
-                modal.Function.lookup(config.project._stub_db, "upsert_item").call(
-                    config.db, paper
-                )
-                time_end = time.perf_counter()
-                print(f"db insertion: {time_end- time_sta}")
-                break
-            except Exception as e:
-                print("Error happen.")
-                print(e)
-                retry -= 1
-                if retry < 0:
-                    print(f"Fail to generate {idx}.")
+
+    with concurrent.futures.ThreadPoolExecutor(config.project.num_workers) as executor:
+        futures = [
+            executor.submit(generate_summary, i, config)
+            for i in range(min(num_papers, config.project.max_papers))
+        ]
+        concurrent.futures.wait(futures)
 
 
 @stub.local_entrypoint()
-def main(config_file: str = "configs/defaults.toml"):
+def main(config_file: str = "configs/icml2023.toml"):
     import dacite
     import toml
 
