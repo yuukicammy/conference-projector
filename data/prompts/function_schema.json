@@ -20,9 +20,13 @@
                 "type": "string",
                 "description": "Experimental results"
             },
-            "category_en": {
+            "task_en": {
                 "type": "string",
-                "description": "Category"
+                "description": "Task"
+            },
+            "topic_en": {
+                "type": "string",
+                "description": "Technical topic"
             },
             "application_en": {
                 "type": "string",
@@ -30,7 +34,7 @@
             },
             "description_ja": {
                 "type": "string",
-                "description": "論文の概要"
+                "description": "論文の簡潔な説明"
             },
             "advantages_ja": {
                 "type": "string",
@@ -44,9 +48,13 @@
                 "type": "string",
                 "description": "実験結果"
             },
-            "category_ja": {
+            "task_ja": {
                 "type": "string",
-                "description": "カテゴリ"
+                "description": "タスク"
+            },
+            "topic_ja": {
+                "type": "string",
+                "description": "技術トピック"
             },
             "application_ja": {
                 "type": "string",
@@ -58,13 +66,15 @@
             "advantages_en",
             "essence_en",
             "results_en",
-            "category_en",
+            "task_en",
+            "topic_en",
             "application_en",
             "description_ja",
             "advantages_ja",
             "essence_ja",
             "results_ja",
-            "category_ja",
+            "task_ja",
+            "topic_ja",
             "application_ja"
         ]
     }

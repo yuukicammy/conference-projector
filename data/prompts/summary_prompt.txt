@@ -3,23 +3,42 @@
 
 [English]
 (1) Brief description of the paper.
+
 (2) Advantages over previous studies.
+
 (3) The key essence of the proposed approach.
+
 (4) Experimental results.
-(5) Category in Computer Vision of the paper　(ex. 3D Human Pose Estimation, 3D Object Tracking, Object Detection, Image Exposure Correction)
-(6) Application of the proposed technology
+
+(5) The task that this paper is addressing. Note that a task is a specific problem or task that the paper is working on. ex: Cost Reduction of Training Neural Differential Equations.
+
+(6) Key Technical Topic. The technology, theory, model on which this paper is primarily based. ex: Neural Differential Equations, Gradient Descent, Cooperative game theory, Cascaded Diffusion Model, Open Vocabulary Models, CLIP, Zero-Shot Learning, Zero-Shot Image Classification.
+
+(7) Application of the proposed technology. The application where this technology will be applied. 
 
 [日本語]
-(7) 論文の簡潔な説明
-(8) 先行研究より優れている点
-(9) 提案手法のポイント
-(10) 実験結果
-(11) コンピュータビジョンにおける論文のカテゴリ (例: 3D人物姿勢推定、3D物体追跡、物体検出, 露出補正)
-(12) この技術のアプリケーション 
+(8) 論文の簡潔な説明
+
+(9) 先行研究より優れている点
+
+(10) 提案手法のポイント
+
+(11) 実験結果
+
+(12) この論文が取り組んでいるタスク。なお、タスクとは、論文が取り組んでいる特定の問題や課題のことです。
+
+(13) キーとなる技術トピック。なお、キーとなる技術トピックとはこの論文の技術が主にベースとしている技術, 理論, モデルのことです。(例：勾配降下法、モンテカルロ法、カスケード拡散モデル、Open Vocabulary Models, CLIP、ゼロショット学習、ゼロショット画像分類)
+
+(14) この技術のアプリケーション。なお、アプリケーションとは、論文の技術が想定している応用先を示します。 
+
 ```
-タイトル:{}
-アブストラクト:{}
+
+タイトル: {}
+
+アブストラクト: {}
+
 ```
 
 英語と日本語で出力してください。
 URLの終わりには必ずスペースを入れてください。
+簡潔に短文で記載して下さい。
