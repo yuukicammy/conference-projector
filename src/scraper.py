@@ -358,6 +358,176 @@ def extract_papers_from_web(config: Config):
 
 
 @stub.function(
+    image=modal.Image.debian_slim()
+    .apt_install("git")
+    .pip_install(
+        "beautifulsoup4",
+        "requests",
+        "arxiv@git+https://github.com/lukasschwab/arxiv.py.git",
+    ),
+    network_file_systems={
+        SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
+    },
+    timeout=3600,
+    retries=0,
+    cpu=1,
+)
+def pipline_icml_2023(
+    config: Config,
+    scrape_title: bool = False,
+    scrape_orals: bool = False,
+    scrape_arxiv: bool = False,
+    scrape_open_review: bool = True,
+):
+    import concurrent
+
+    papers = []
+    scraper = ICMLScraper(config=config)
+    if scrape_title:
+        # Scrape all paper information one by one
+        for idx, paper in enumerate(scraper.scrape()):
+            if config.project.max_papers <= idx:
+                break
+
+            paper["id"] = str(idx)
+            print("Extracted: ", paper)
+            papers.append(paper)
+
+            # Save to DB
+            res = modal.Function.lookup(config.project._stub_db, "upsert_item").call(
+                db_config=config.db, item=paper
+            )
+            assert 6 < len(res.keys())
+    if scrape_orals:
+        # Update papers from oral pages.
+        print("Scraping oral papers...")
+        num_orals = 0
+        for oral in scraper.scrape_orals():
+            print(f"oral {num_orals}: ", oral)
+
+            # Load the current information
+            items = modal.Function.lookup(ProjectConfig._stub_db, "query_items").call(
+                db_config=config.db,
+                query=f'SELECT * FROM c WHERE c.title = "{oral["title"]}"',
+                force=True,
+            )
+            if items is None or len(items) == 0:
+                continue
+
+            paper = items[0]
+            paper["abstract"] = oral["abstract"].stripe()
+            paper["type"] = "oral"
+            if 0 < len(oral["image_url"]):
+                paper["image_url"] = oral["image_url"]
+
+            # Update the paper information
+            modal.Function.lookup(ProjectConfig._stub_db, "upsert_item").call(
+                db_config=config.db, item=paper
+            )
+            papers[int(paper["id"])] = paper
+            num_orals += 1
+        print(f"Total {num_orals} oral papers scraped.")
+
+    num_papers = modal.Function.lookup(ProjectConfig._stub_db, "get_num_papers").call(
+        db_config=config.db
+    )
+
+    if scrape_arxiv:
+        print("Scraping arxiv information...")
+
+        # Search arxiv and update paper information
+        def update(idx: int) -> None:
+            # Load the current information
+            items = modal.Function.lookup(ProjectConfig._stub_db, "query_items").call(
+                db_config=config.db,
+                query=f'SELECT * FROM c WHERE c.id = "{str(idx)}"',
+                force=True,
+            )
+            if items is None or len(items) == 0:
+                return
+            paper = items[0]
+            if (
+                # 0 < len(#paper["arxiv_id"])
+                # and
+                paper["pdf_url"].startswith("https://arxiv.org")
+                and 0 < len(paper["abstract"])
+            ):
+                # Arxiv info is already scraped.
+                return
+            arxiv_info = scraper.scrape_arxiv(title=paper["title"])
+            print(f"arxiv info of  {idx}: ", arxiv_info)
+            if arxiv_info is None:
+                return
+            for (
+                key,
+                value,
+            ) in (
+                arxiv_info.items()
+            ):  # {"arxiv_id": arxiv_id, "abstract": abstract, "pdf_url": pdf_url}
+                paper[key] = value
+
+            # Update the paper information
+            modal.Function.lookup(ProjectConfig._stub_db, "upsert_item").call(
+                db_config=config.db, item=paper
+            )
+            papers[int(paper["id"])] = paper
+
+        with concurrent.futures.ThreadPoolExecutor(
+            config.project.num_workers
+        ) as executor:
+            futures = [
+                executor.submit(update, i)
+                for i in range(min(num_papers, config.project.max_papers))
+            ]
+            concurrent.futures.wait(futures)
+
+    if scrape_open_review:
+        print("Searching Open Review...")
+
+        # Load the current information
+        def update(idx: int) -> None:
+            items = modal.Function.lookup(ProjectConfig._stub_db, "query_items").call(
+                db_config=config.db,
+                query=f'SELECT * FROM c WHERE c.id = "{str(idx)}"',
+                force=True,
+            )
+            if items is None or len(items) == 0:
+                return
+            paper = items[0]
+            if 0 < len(paper["abstract"]) and not paper["pdf_url"].startswith(
+                "https://icml.cc"
+            ):
+                # Abstract already exists.
+                return
+            res = scraper.search_open_review(title=paper["title"])
+            print(f"open review info of {idx}: ", res)
+            if res is not None:
+                paper["abstract"] = res["abstract"]
+                paper["pdf_url"] = res["pdf_url"]
+                # Update the paper information
+                modal.Function.lookup(ProjectConfig._stub_db, "upsert_item").call(
+                    db_config=config.db, item=paper
+                )
+                papers[int(paper["id"])] = paper
+
+        with concurrent.futures.ThreadPoolExecutor(
+            config.project.num_workers
+        ) as executor:
+            futures = [
+                executor.submit(update, i)
+                for i in range(min(num_papers, config.project.max_papers))
+            ]
+            concurrent.futures.wait(futures)
+
+    # Save all paper info as a json file
+    if config.files.save_json:
+        json_path = Path(SHARED_ROOT) / config.files.json_file
+        with open(str(json_path), "w", encoding="utf-8") as fw:
+            json.dump(papers, fw, indent=config.files.json_indent, ensure_ascii=False)
+            print(f"Saved a json file: {json_path}")
+
+
+@stub.function(
     image=modal.Image.debian_slim().pip_install("beautifulsoup4", "requests"),
     network_file_systems={
         SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
