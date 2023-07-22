@@ -97,9 +97,19 @@ def save_embeddings(config: Config) -> None:
     from pathlib import Path
     import numpy as np
 
-    papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
-        db_config=config.db, max_item_count=config.project.max_papers
+    papers = []
+    num_papers = modal.Function.lookup(ProjectConfig._stub_db, "get_num_papers").call(
+        db_config=config.db
     )
+    for idx in range(min(config.project.max_papers, num_papers)):
+        # Load the current information
+        items = modal.Function.lookup(ProjectConfig._stub_db, "query_items").call(
+            db_config=config.db,
+            query=f'SELECT * FROM c WHERE c.id = "{str(idx)}"',
+            force=True,
+        )
+        paper = items[0]
+        papers.append(paper)
 
     converted = dict_list_to_list_dict(papers, config.embedding.keys)
     for key, list_data in converted.items():
