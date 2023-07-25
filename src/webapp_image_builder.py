@@ -7,7 +7,9 @@ from .config import Config
 from .utils import insert_line_breaks
 
 SHARED_ROOT = "/root/.cache"
-CONFIG_FILE = "configs/defaults.toml"
+
+# CONFIG_FILE = "configs/cvpr2023.toml"
+CONFIG_FILE = "configs/icml2023.toml"
 
 
 class ModalImageBuilder:
@@ -165,6 +167,10 @@ class ModalImageBuilder:
                 updated_paper["award_text"] = ""
             else:
                 updated_paper["award_text"] = paper["award"]
+        elif "type" in paper.keys() and 0 < len(paper["type"]):
+            updated_paper["award_label"] = paper["type"]
+            updated_paper["award_text"] = ""
+            updated_paper["award"] = paper["type"]
         else:
             updated_paper["award_label"] = "None"
             updated_paper["award_text"] = ""
