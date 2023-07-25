@@ -73,7 +73,7 @@ class Scraper:
 
         base_url = "https://api2.openreview.net/notes/search"
         search_params = {
-            "query": title.replace("/", "\/").replace("!", ""),
+            "query": title.replace("/", "\/").replace("!", "").replace("-", " "),
             "limit": 10,  # Number of search results to retrieve (adjust as needed)
         }
         response = requests.get(url=base_url, params=search_params)
@@ -288,7 +288,7 @@ class ICMLScraper(Scraper):
             yield {
                 "title": title,
                 "abstract": abstract,
-                "type": "oral",
+                "type": "Oral",
                 "image_url": img_url,
             }
 
@@ -367,9 +367,9 @@ def extract_papers_from_web(config: Config):
     network_file_systems={
         SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
-    timeout=3600,
+    timeout=36000,
     retries=0,
-    cpu=1,
+    cpu=8,
 )
 def pipline_icml_2023(
     config: Config,
@@ -382,13 +382,15 @@ def pipline_icml_2023(
 
     papers = []
     scraper = ICMLScraper(config=config)
+    idx = 0
     if scrape_title:
         # Scrape all paper information one by one
-        for idx, paper in enumerate(scraper.scrape()):
+        for paper in scraper.scrape():
             if config.project.max_papers <= idx:
                 break
 
             paper["id"] = str(idx)
+            idx += 1
             print("Extracted: ", paper)
             papers.append(paper)
 
@@ -414,8 +416,8 @@ def pipline_icml_2023(
                 continue
 
             paper = items[0]
-            paper["abstract"] = oral["abstract"].stripe()
-            paper["type"] = "oral"
+            paper["abstract"] = oral["abstract"].strip()
+            paper["type"] = "Oral"
             if 0 < len(oral["image_url"]):
                 paper["image_url"] = oral["image_url"]
 
@@ -423,7 +425,6 @@ def pipline_icml_2023(
             modal.Function.lookup(ProjectConfig._stub_db, "upsert_item").call(
                 db_config=config.db, item=paper
             )
-            papers[int(paper["id"])] = paper
             num_orals += 1
         print(f"Total {num_orals} oral papers scraped.")
 
@@ -469,7 +470,6 @@ def pipline_icml_2023(
             modal.Function.lookup(ProjectConfig._stub_db, "upsert_item").call(
                 db_config=config.db, item=paper
             )
-            papers[int(paper["id"])] = paper
 
         with concurrent.futures.ThreadPoolExecutor(
             config.project.num_workers
@@ -507,7 +507,6 @@ def pipline_icml_2023(
                 modal.Function.lookup(ProjectConfig._stub_db, "upsert_item").call(
                     db_config=config.db, item=paper
                 )
-                papers[int(paper["id"])] = paper
 
         with concurrent.futures.ThreadPoolExecutor(
             config.project.num_workers
@@ -588,6 +587,7 @@ def extract_awards_from_web(config: Config):
     network_file_systems={
         SHARED_ROOT: modal.NetworkFileSystem.from_name(ProjectConfig._shared_vol)
     },
+    cpu=8,
     timeout=3600,
 )
 def extract_awards_from_config(config: Config):
@@ -635,7 +635,7 @@ def main(config_file: str = "configs/icml2023.toml"):
         config=config,
         scrape_title=False,
         scrape_orals=False,
-        scrape_arxiv=True,
+        scrape_arxiv=False,
         scrape_open_review=True,
     )
     # extract_awards_from_web.call(config=config)
