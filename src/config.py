@@ -95,6 +95,7 @@ class SummaryConfig:
     prompt: str = field(default=str)
     function_schema: Dict[str, Any] = field(default_factory=dict)
     sleep: float = 5
+    max_tokens: int = 4000
 
 
 @dataclass

@@ -29,6 +29,7 @@ def request_chat(
     model: str,
     retry: int = 0,
     overwrite: bool = False,
+    max_tokens: int = 4000,
 ) -> Dict[str, Any]:
     """
     Send a chat completion request to the OpenAI API to generate summaries for papers.
@@ -50,7 +51,7 @@ def request_chat(
 
     if not overwrite and all(
         [
-            key in paper.keys() and 0 < len(paper[key])
+            key in paper.keys() and 0 < len(paper[key]) and "ã" not in paper[key]
             for key in function_schema[0]["parameters"]["properties"].keys()
         ]
     ):
@@ -72,27 +73,22 @@ def request_chat(
                 top_p=1.0,
                 frequency_penalty=0.0,
                 presence_penalty=0.0,
+                max_tokens=max_tokens,
             )
             message = response["choices"][0]["message"]
-            if message.get("function_call"):
+            if 0 < len(message["function_call"]):
                 result = response["choices"][0]["message"]["function_call"]["arguments"]
                 print(result)
-                if response["choices"][0]["finish_reason"] == "length":
-                    result = result + '"}'
-                    json_result = json.loads(result)
-                    for key in function_schema[0]["parameters"]["properties"].keys():
-                        if json_result.get(key) is None:
-                            json_result[key] = ""
-                    print(f"converted resut: {json_result}")
-                    return json_result
-                else:
+                if "ã" not in result:
+                    # TODO: Processing when finish_reason is length.
                     return json.loads(result)
+                else:
+                    print("Wrong text.", response)
+                    raise Exception("Wrong text.", response)
             else:
-                print("Faied to summarize a paper. retry.")
-                raise Exception
+                raise Exception("Failed to summarize a paper. retry.")
         except Exception as e:
-            print(e)
-            print("Fail to get the function_call result from chat completion.")
+            print("Fail to get the function_call result from chat completion. ", e)
             retry -= 1
             time.sleep(1)
     print(f"All retries failed. Return None. \n{prompt}")
@@ -101,6 +97,7 @@ def request_chat(
 
 def generate_summary(idx: int, config: Config) -> None:
     import time
+    import re
 
     # Load the current information
     items = modal.Function.lookup(ProjectConfig._stub_db, "query_items").call(
@@ -114,7 +111,7 @@ def generate_summary(idx: int, config: Config) -> None:
     paper = items[0]
     if all(
         [
-            paper.get(key) and 0 < len(paper[key])
+            key in paper.keys() and 0 < len(paper[key]) and "ã" not in paper[key]
             for key in config.summary.function_schema["parameters"]["properties"].keys()
         ]
     ):
@@ -125,20 +122,43 @@ def generate_summary(idx: int, config: Config) -> None:
         try:
             time_sta = time.perf_counter()
             result = request_chat(
-                config.summary.prompt.format(paper["title"], paper["abstract"]),
-                paper,
-                [config.summary.function_schema],
-                config.summary.model,
-                0,
-                False,
+                prompt=config.summary.prompt.format(
+                    re.sub(r"\\.", "", paper["title"])
+                    .replace("\\", "\\\\")
+                    .replace('"', "")
+                    .replace("'", "")
+                    .replace("$", ""),
+                    re.sub(
+                        r"\\.",
+                        "",
+                        paper["abstract"]
+                        .replace("\n", " ")
+                        .replace("{", "(")
+                        .replace("}", ")")
+                        .replace("\\", "\\\\")
+                        .replace('"', "")
+                        .replace("'", "")
+                        .replace("$", ""),
+                    ),
+                ),
+                paper=paper,
+                function_schema=[config.summary.function_schema],
+                model=config.summary.model,
+                retry=0,
+                overwrite=False,
+                max_tokens=config.summary.max_tokens,
             )
             for key in config.summary.function_schema["parameters"][
                 "properties"
             ].keys():
-                if result.get(key) is None or len(result[key]) == 0:
-                    raise Exception(
-                        f"Fail to generate summary. {key} is not generated. Paper id {idx}."
-                    )
+                if key not in result.keys() or len(result[key]) == 0:
+                    key_ = key.replace("_ja", "_en")
+                    if retry == 0 and key_ in result.keys() and 0 < len(result[key_]):
+                        result[key] = result[key_]
+                    else:
+                        raise Exception(
+                            f"Fail to generate summary. {key} is not generated. Paper id {idx}."
+                        )
                 paper[key] = (
                     result[key]
                     .encode("utf-8")
@@ -154,6 +174,7 @@ def generate_summary(idx: int, config: Config) -> None:
         except Exception as e:
             print(f"Error happen in generate_summary.", e)
             retry -= 1
+            time.sleep(config.summary.sleep)
     print(f"The upper limit of RETRY is now reached in generating summary {idx}.")
 
 
@@ -184,6 +205,7 @@ def generate_summaries(config: Config) -> None:
     num_papers = modal.Function.lookup(ProjectConfig._stub_db, "get_num_papers").call(
         db_config=config.db
     )
+    print("Num papers: ", num_papers, ", DB :", config.db)
 
     with concurrent.futures.ThreadPoolExecutor(config.project.num_workers) as executor:
         futures = [
