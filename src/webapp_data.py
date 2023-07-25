@@ -15,6 +15,7 @@ class ContainerData:
 
     def __init__(self, config: Config) -> None:
         self.config = config
+        self.conference_options = config.webapp.conference_options
         self.legend_orders = {"award_label": self.config.webapp.award_labels}
         print("legend_orders: ", self.legend_orders)
 
@@ -32,9 +33,11 @@ class ContainerData:
             self.properties = schema["parameters"]["properties"]
             for key in self.properties.keys():  # this keys are not optional.
                 if key in [
-                    "category_en",
+                    "task_en",
+                    "topic_en",
                     "application_en",
-                    "category_ja",
+                    "task_ja",
+                    "topic_ja",
                     "application_ja",
                 ]:
                     continue

@@ -1,3 +1,7 @@
+# 1) Change CONFIG_FILE
+# 2) Change PROD_STUB_NAME
+# 3) Change CONFIG_FILE in webapp_image_builder.py
+
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
 import modal
@@ -52,7 +56,7 @@ modal_image = (
 )
 
 stub = modal.Stub(
-    ProjectConfig._stub_webapp,
+    PROD_STUB_NAME if "prod" in ProjectConfig._name else ProjectConfig._stub_webapp,
     image=modal_image,
     mounts=[
         modal.Mount.from_local_dir(
@@ -148,8 +152,6 @@ class DashApp:
             [
                 Input("scatter-plot", "clickData"),
                 Input("embeddings", "value"),
-                Input("reduction-algorithm", "value"),
-                Input("dimensions", "value"),
                 Input("viewall-nclicks", "n_clicks"),
             ],
             [
@@ -229,6 +231,21 @@ class DashApp:
             res["dim"] = None
         return res
 
+    def parse_pathname(self, pathname: str) -> Dict[str, str | bool]:
+        # /cvpr2023/en or /en pr /ja or /cvpr2023/ja
+        if pathname is None or len(pathname) == 0:
+            return {"en_mode": False, "conference": ""}
+        values = pathname.split("/")
+        en_mode = False
+        if "en" in values:
+            en_mode = True
+        conference = ""
+        for option in self.config.webapp.conference_options:
+            if option["value"] in values:
+                conference = option["value"]
+                break
+        return {"en_mode": en_mode, "conference": conference}
+
     @modal.method()
     @staticmethod
     def make_search(
@@ -253,23 +270,34 @@ class DashApp:
         self,
         clicked_data: Dict[str, Any],
         key: str,
-        method: str,
-        dim: int,
+        # method: str = "umap",
+        # dim: int = 2,
         view_all_nclicks: int = 0,
         search: str = None,
         shared_data: Dict[str, Any] = {},
         pathname: str = None,
     ):
-        en_mode = True if pathname.startswith("/en") else False
+        method = "umap"
+        dim = 2
+        path_dict = self.parse_pathname(pathname=pathname)
+        en_mode = path_dict["en_mode"]
 
         if 0 < view_all_nclicks:
             # Show all nodes
             return (
                 "",
                 self.layout.default_figure(
-                    df=self.app_data.df, key=key, method=method, dim=dim
+                    df=self.app_data.df,
+                    key=key,
+                    method=method,
+                    dim=dim,
+                    en_mode=en_mode,
                 ),
-                {"width": "100%"},
+                {
+                    "width": "100%",
+                    "minWidth": "700px",
+                    "minHeight": "400px",
+                },
                 None,
                 {"width": "0%"},
                 0,
@@ -312,7 +340,9 @@ class DashApp:
                     dim=dim,
                     indices=indices,
                 ),
-                {"width": self.config.webapp.width_figure},
+                {
+                    "width": self.config.webapp.width_figure,
+                },
                 dbc.Row(
                     [
                         self.layout.selected_paper_block(
@@ -344,9 +374,17 @@ class DashApp:
                 return (
                     search,
                     self.layout.default_figure(
-                        df=self.app_data.df, key=key, method=method, dim=dim
+                        df=self.app_data.df,
+                        key=key,
+                        method=method,
+                        dim=dim,
+                        en_mode=en_mode,
                     ),
-                    {"width": "100%"},
+                    {
+                        "width": "100%",
+                        "minWidth": "700px",  # Set the minimum width of the graph container
+                        "minHeight": "400px",
+                    },
                     None,
                     {"width": "0%"},
                     dash.no_update,
@@ -365,7 +403,11 @@ class DashApp:
                         dim=dim,
                         indices=indices,
                     ),
-                    {"width": self.config.webapp.width_figure},
+                    {
+                        # "width": self.config.webapp.width_figure,
+                        "minWidth": "400px",  # Set the minimum width of the graph container
+                        "minHeight": "400px",
+                    },
                     dbc.Row(
                         [
                             self.layout.selected_paper_block(
@@ -381,7 +423,11 @@ class DashApp:
                             ),
                         ]
                     ),
-                    {"width": self.config.webapp.width_details},
+                    {
+                        "width": self.config.webapp.width_details,
+                        "minWidth": "700px",  # Set the minimum width of the graph container
+                        "minHeight": "700px",
+                    },
                     dash.no_update,
                     dash.no_update,
                 )
