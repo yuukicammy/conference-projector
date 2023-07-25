@@ -5,6 +5,7 @@ import modal
 from PIL import Image
 
 from .config import ProjectConfig, Config
+from .utils import overwrite_image
 
 stub = modal.Stub(ProjectConfig._stub_paper_image)
 SHARED_ROOT = "/root/.cache"
@@ -156,16 +157,23 @@ def extract_image(
     """
     from pathlib import Path
 
-    if len(paper["arxiv_id"]) == 0:
-        paper["arxiv_id"] = search_arxiv(title=paper["title"])
-    if not save_arxiv_image(
-        paper["arxiv_id"], save_path, image_size_limit=config.files.image_max_size
-    ):
-        save_pdf_image(
-            url=paper["pdf_url"],
-            save_path=save_path,
-            image_size_limit=config.files.image_max_size,
+    if "image_url" in paper.keys() and 0 < len(paper["image_url"]):
+        overwrite_image(
+            img_url=paper["image_url"],
+            image_path=Path(SHARED_ROOT) / paper["image_path"],
+            img_ignore_paths=None,
         )
+    else:
+        if len(paper["arxiv_id"]) == 0:
+            paper["arxiv_id"] = search_arxiv(title=paper["title"])
+        if not save_arxiv_image(
+            paper["arxiv_id"], save_path, image_size_limit=config.files.image_max_size
+        ):
+            save_pdf_image(
+                url=paper["pdf_url"],
+                save_path=save_path,
+                image_size_limit=config.files.image_max_size,
+            )
     if not (Path(SHARED_ROOT) / paper["image_path"]).is_file():
         paper["image_path"] = ""
     paper["id"] = str(idx)
@@ -278,8 +286,10 @@ def extract_representative_images(config: Config) -> None:
     import concurrent
 
     papers = modal.Function.lookup(config.project._stub_db, "get_all_papers").call(
-        config.db, config.project.max_papers
+        config.db,
+        config.project.max_papers,
     )
+    papers = sorted(papers, key=lambda x: int(x["id"]))
 
     dir = Path(config.project.dataname) / "top_images"
     Path(SHARED_ROOT / dir).mkdir(parents=True, exist_ok=True)  # recursive
@@ -299,7 +309,6 @@ def extract_representative_images(config: Config) -> None:
                     executor.submit(extract_image, paper, str(im_path), i, config)
                 )
             else:
-                paper["id"] = str(i)
                 tasks.append(
                     executor.submit(
                         modal.Function.lookup(
