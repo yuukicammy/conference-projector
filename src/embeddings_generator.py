@@ -27,12 +27,8 @@ def dict_list_to_list_dict(papers: List[Any], keys: List[str]) -> Dict[str, List
     Returns:
         Dict[str, List[str]]: Dictionary with lists as values.
     """
-    converted = {k: [] for k in keys}
-    for paper in papers:
-        for key in keys:
-            value = paper[key]
-            value = value.replace("\n", " ")
-            converted[key].append(value)
+    print(type(papers[0]))
+    converted = {k: [paper[k].replace("\n", " ") for paper in papers] for k in keys}
     return converted
 
 
@@ -83,6 +79,7 @@ def generate_embeddings(
         SHARED_ROOT: modal.SharedVolume.from_name(ProjectConfig._shared_vol)
     },
     secret=modal.Secret.from_name("my-openai-secret"),
+    timeout=36000,
 )
 def save_embeddings(config: Config) -> None:
     """
@@ -98,18 +95,10 @@ def save_embeddings(config: Config) -> None:
     import numpy as np
 
     papers = []
-    num_papers = modal.Function.lookup(ProjectConfig._stub_db, "get_num_papers").call(
-        db_config=config.db
+    papers = modal.Function.lookup(ProjectConfig._stub_db, "get_all_papers").call(
+        db_config=config.db, max_item_count=config.project.max_papers, force=True
     )
-    for idx in range(min(config.project.max_papers, num_papers)):
-        # Load the current information
-        items = modal.Function.lookup(ProjectConfig._stub_db, "query_items").call(
-            db_config=config.db,
-            query=f'SELECT * FROM c WHERE c.id = "{str(idx)}"',
-            force=True,
-        )
-        paper = items[0]
-        papers.append(paper)
+    papers = sorted(papers, key=lambda x: int(x["id"]))
 
     converted = dict_list_to_list_dict(papers, config.embedding.keys)
     for key, list_data in converted.items():
