@@ -8,6 +8,7 @@ def insert_line_breaks(
     prefix: str = "",
     suffix: str = "",
     newline="\n",
+    is_japanese=False,
 ) -> str:
     """
     Insert line breaks into the text to ensure that each line has a maximum number of characters.
@@ -22,15 +23,24 @@ def insert_line_breaks(
     Returns:
         str: The text with line breaks inserted.
     """
-    words = text.split()
+    if is_japanese:
+        words = text
+        max_chars_per_line = max_chars_per_line // 2
+    else:
+        words = text.split()
+
     lines = []
     current_line = ""
     for word in words:
         if len(current_line) + len(word) <= max_chars_per_line:
-            current_line += word + " "
+            current_line += word
+            if not is_japanese:
+                current_line += " "
         else:
             lines.append(current_line.strip())
-            current_line = word + " "
+            current_line = word
+            if not is_japanese:
+                current_line += " "
     lines.append(current_line.strip())
     return prefix + newline.join(lines) + suffix
 

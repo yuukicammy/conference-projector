@@ -20,3 +20,9 @@ body {
         sans-serif,
         "Meiryo";
 }
+
+@media screen and (max-width: 600px) {
+    .legend {
+        display: none !important;
+    }
+}

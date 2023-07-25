@@ -52,33 +52,109 @@ class ModalImageBuilder:
             suffix="<br>",
             newline="<br>",
         )
-        updated_paper["short_category"] = insert_line_breaks(
-            text=updated_paper["category_en"],
+        updated_paper["short_task_en"] = insert_line_breaks(
+            text=updated_paper["task_en"],
             max_chars_per_line=self.config.webapp.max_chars_short,
             prefix="<br>",
             suffix="<br>",
             newline="<br>",
         )
-        updated_paper["long_category"] = insert_line_breaks(
-            text=updated_paper["category_en"],
+        updated_paper["long_task_en"] = insert_line_breaks(
+            text=updated_paper["task_en"],
             max_chars_per_line=self.config.webapp.max_chars_long,
             prefix="<br>",
             suffix="<br>",
             newline="<br>",
         )
-        updated_paper["short_application"] = insert_line_breaks(
+        updated_paper["short_topic_en"] = insert_line_breaks(
+            text=updated_paper["topic_en"],
+            max_chars_per_line=self.config.webapp.max_chars_short,
+            prefix="<br>",
+            suffix="<br>",
+            newline="<br>",
+        )
+        updated_paper["long_topic_en"] = insert_line_breaks(
+            text=updated_paper["topic_en"],
+            max_chars_per_line=self.config.webapp.max_chars_long,
+            prefix="<br>",
+            suffix="<br>",
+            newline="<br>",
+        )
+        updated_paper["short_task_ja"] = insert_line_breaks(
+            text=updated_paper["task_ja"],
+            max_chars_per_line=self.config.webapp.max_chars_short,
+            prefix="<br>",
+            suffix="<br>",
+            newline="<br>",
+            is_japanese=True,
+        )
+        updated_paper["long_task_ja"] = insert_line_breaks(
+            text=updated_paper["task_ja"],
+            max_chars_per_line=self.config.webapp.max_chars_long,
+            prefix="<br>",
+            suffix="<br>",
+            newline="<br>",
+            is_japanese=True,
+        )
+        updated_paper["short_topic_ja"] = insert_line_breaks(
+            text=updated_paper["topic_ja"],
+            max_chars_per_line=self.config.webapp.max_chars_short,
+            prefix="<br>",
+            suffix="<br>",
+            newline="<br>",
+            is_japanese=True,
+        )
+        updated_paper["long_topic_ja"] = insert_line_breaks(
+            text=updated_paper["topic_ja"],
+            max_chars_per_line=self.config.webapp.max_chars_long,
+            prefix="<br>",
+            suffix="<br>",
+            newline="<br>",
+            is_japanese=True,
+        )
+        # updated_paper["short_category"] = insert_line_breaks(
+        #     text=updated_paper["category_en"],
+        #     max_chars_per_line=self.config.webapp.max_chars_short,
+        #     prefix="<br>",
+        #     suffix="<br>",
+        #     newline="<br>",
+        # )
+        # updated_paper["long_category"] = insert_line_breaks(
+        #     text=updated_paper["category_en"],
+        #     max_chars_per_line=self.config.webapp.max_chars_long,
+        #     prefix="<br>",
+        #     suffix="<br>",
+        #     newline="<br>",
+        # )
+        updated_paper["short_application_en"] = insert_line_breaks(
             text=updated_paper["application_en"],
             max_chars_per_line=self.config.webapp.max_chars_short,
             prefix="<br>",
             suffix="<br>",
             newline="<br>",
         )
-        updated_paper["long_application"] = insert_line_breaks(
+        updated_paper["long_application_en"] = insert_line_breaks(
             text=updated_paper["application_en"],
             max_chars_per_line=self.config.webapp.max_chars_long,
             prefix="<br>",
             suffix="<br>",
             newline="<br>",
+        )
+        updated_paper["short_application_ja"] = insert_line_breaks(
+            text=updated_paper["application_ja"],
+            max_chars_per_line=self.config.webapp.max_chars_short,
+            prefix="<br>",
+            suffix="<br>",
+            newline="<br>",
+            is_japanese=True,
+        )
+        updated_paper["long_application_ja"] = insert_line_breaks(
+            text=updated_paper["application_ja"],
+            max_chars_per_line=self.config.webapp.max_chars_long,
+            prefix="<br>",
+            suffix="<br>",
+            newline="<br>",
+            is_japanese=True,
         )
 
         if 0 < len(paper["award"]):
@@ -126,9 +202,16 @@ class ModalImageBuilder:
             )
         elif method == "umap":
             reducer = UMAP(
-                n_components=dim,
-                output_metric="manhattan",
-                n_neighbors=self.config.webapp.num_neighborhoods * 2,
+                angular_rp_forest=True,
+                metric=self.config.webapp.umap["metric"],
+                output_metric=self.config.webapp.umap["output_metric"],
+                min_dist=float(self.config.webapp.umap["min_dist"]),
+                n_neighbors=int(self.config.webapp.umap["n_neighbors"]),
+                tqdm_kwds={
+                    "bar_format": "{desc}: {percentage:3.0f}%| {bar} {n_fmt}/{total_fmt} [{elapsed}]",
+                    "desc": "Epochs completed",
+                    "disable": True,
+                },
             )
         else:
             raise ValueError("Specified an unknown method to reduce dimensions.")

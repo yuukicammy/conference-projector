@@ -62,7 +62,7 @@ values = [
 [embedding]
 # see https://platform.openai.com/docs/guides/production-best-practices/improving-latencies
 batch_size = 20
-keys = ["title", "abstract", "category_en", "application_en"]
+keys = ["title", "abstract", "description_en", "advantages_en", "essence_en", "results_en", "task_en", "topic_en", "application_en"]
 model = "text-embedding-ada-002"
 retry = 5
 
@@ -104,19 +104,16 @@ size_fig_title_small = 16
 
 text_concern_description = "From what perspective do you search for papers?"
 text_details_default = "Click a node for paper information."
-text_figure_title_format = "{} Projection: CVPR 2023"
+text_figure_title_format = "{} Projection: {}"
 text_recommendation_description = "Recommendations"
 text_selection_description = "Your Selection"
 text_top_description = "Clicking on a node will display information about that paper and papers close to it."
 
-title = "Conference Projector: CVPR 2023"
-title_url = "https://yuukicammy--conference-projector-wrapper.modal.run"
-
-label_dimension = "Dimension"
+# label_dimension = "Dimension"
 label_distance = "Distance"
-label_embeddings = "Concern"
+# label_embeddings = "Concern"
 label_options = "Options"
-label_projection_algorithm = "Projection Algorithm"
+#label_projection_algorithm = "Projection Algorithm"
 
 width_details = "60%"
 width_figure = "40%"
@@ -134,13 +131,50 @@ award_labels = [
   "Best Paper",
 ]
 
+text_conference = "CVPR 2023"
+
+title = "Conference Projector: "
+title_url = "https://yuukicammy--conference-projector-cvpr2023-wrapper.modal.run"
+
+default_embedding_value = "task_en"
+
+[[webapp.conference_options]]
+href = "https://yuukicammy--conference-projector-icml2023-wrapper.modal.run"
+label = "ICML 2023"
+value = "icml2023"
+
+[[webapp.conference_options]]
+href = "https://yuukicammy--conference-projector-cvpr2023-wrapper.modal.run"
+label = "CVPR 2023"
+value = "cvpr2023"
+
 [[webapp.embedding_options]]
-label = "Category"
-value = "category_en"
+label = "Task"
+value = "task_en"
+
+[[webapp.embedding_options]]
+label = "Topic"
+value = "topic_en"
 
 [[webapp.embedding_options]]
 label = "Application"
 value = "application_en"
+
+[[webapp.embedding_options]]
+label = "Brief description"
+value = "description_en"
+
+[[webapp.embedding_options]]
+label = "Advantages"
+value = "advantages_en"
+
+[[webapp.embedding_options]]
+label = "Essence"
+value = "essence_en"
+
+[[webapp.embedding_options]]
+label = "Results"
+value = "results_en"
 
 [[webapp.embedding_options]]
 label = "Title"
@@ -154,21 +188,27 @@ value = "abstract"
 label = "2D"
 value = 2
 
-[[webapp.dimension_options]]
-label = "3D"
-value = 3
+# [[webapp.dimension_options]]
+# label = "3D"
+# value = 3
 
-[[webapp.dimension_reduction_options]]
-label = "PCA"
-value = "pca"
+# [[webapp.dimension_reduction_options]]
+# label = "PCA"
+# value = "pca"
 
 [[webapp.dimension_reduction_options]]
 label = "UMAP"
 value = "umap"
 
-[[webapp.dimension_reduction_options]]
-label = "t-SNE"
-value = "tsne"
+# [[webapp.dimension_reduction_options]]
+# label = "t-SNE"
+# value = "tsne"
+
+[webapp.umap]
+metric = "correlation"
+min_dist = 0.1
+n_neighbors = 100
+output_metric = "manhattan"
 
 [db]
 container_id = "Container-01"

@@ -121,6 +121,8 @@ class WebAppConfig:
     text_top_description: str = ""
     text_figure_title_format: str = ""
 
+    text_conference: str = ""
+
     num_text_nodes: int = 0
     num_colors: int = 2000
 
@@ -149,6 +151,7 @@ class WebAppConfig:
     embedding_options: list = field(default_factory=list)
     dimension_options: list = field(default_factory=list)
     dimension_reduction_options: list = field(default_factory=list)
+    conference_options: list = field(default_factory=list)
 
     award_labels: list = field(default_factory=list)
 
@@ -159,6 +162,10 @@ class WebAppConfig:
     web_title: str = ""
     web_description: str = ""
     web_icon: str = ""
+
+    umap: dict = field(default_factory=dict)
+
+    default_embedding_value: str = ""
 
 
 @dataclass

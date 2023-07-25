@@ -1,7 +1,17 @@
-以下の論文について、次の項目を英語と日本語で出力してください。
-簡潔に記述してください。
+ある論文について内容をまとめるタスクです。
+下記に制約、テキスト生成項目、論文の内容を示します。
 
-[English]
+# 制約
+
+- 簡潔に短文で記述してください。
+- テキスト生成項目は英語と日本語の項目があります。それぞれ英語と日本語で出力してください。
+- $$で囲われたテキストは数式です。使う場合は日本語でもそのまま使って下さい。
+
+
+# テキスト生成項目
+
+## English
+
 (1) Brief description of the paper.
 
 (2) Advantages over previous studies.
@@ -12,11 +22,12 @@
 
 (5) The task that this paper is addressing. Note that a task is a specific problem or task that the paper is working on. ex: Cost Reduction of Training Neural Differential Equations.
 
-(6) Key Technical Topic. The technology, theory, model on which this paper is primarily based. ex: Neural Differential Equations, Gradient Descent, Cooperative game theory, Cascaded Diffusion Model, Open Vocabulary Models, CLIP, Zero-Shot Learning, Zero-Shot Image Classification.
+(6) The most important technical topic (select one). The technology, theory, model on which this paper is primarily based. Do NOT Select "Deep Neural Network". ex: Neural Differential Equations, Gradient Descent, Cooperative game theory, Cascaded Diffusion Model, Open Vocabulary Models, CLIP, Zero-Shot Learning, Zero-Shot Image Classification. 
 
 (7) Application of the proposed technology. The application where this technology will be applied. 
 
-[日本語]
+## 日本語
+
 (8) 論文の簡潔な説明
 
 (9) 先行研究より優れている点
@@ -27,9 +38,11 @@
 
 (12) この論文が取り組んでいるタスク。なお、タスクとは、論文が取り組んでいる特定の問題や課題のことです。
 
-(13) キーとなる技術トピック。なお、キーとなる技術トピックとはこの論文の技術が主にベースとしている技術, 理論, モデルのことです。(例：勾配降下法、モンテカルロ法、カスケード拡散モデル、Open Vocabulary Models, CLIP、ゼロショット学習、ゼロショット画像分類)
+(13) 最も重要な技術トピック１つ。なお、重要な技術トピックとはこの論文の技術が主にベースとしている技術, 理論, モデルのことです。
 
 (14) この技術のアプリケーション。なお、アプリケーションとは、論文の技術が想定している応用先を示します。 
+
+# 論文の内容
 
 ```
 
@@ -38,7 +51,3 @@
 アブストラクト: {}
 
 ```
-
-英語と日本語で出力してください。
-URLの終わりには必ずスペースを入れてください。
-簡潔に短文で記載して下さい。
